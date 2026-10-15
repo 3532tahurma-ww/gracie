@@ -1,0 +1,7 @@
+__pycache__/
+tools/review.txt
+.DS_Store
+Thumbs.db
+desktop.ini
+# original photos stay on this computer; GitHub gets the resized copies in people/ (kisiler-guncelle.bat)
+fotograflar/
