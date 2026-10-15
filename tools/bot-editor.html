@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bot editörü · Gracie</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --pink: #ff3d8b; --purple: #7b5cff; --purple-soft: #efeaff; --teal: #0e9f8e; --teal-soft: #e3f8f3; --amber: #a15c00; --amber-soft: #fff1d6; --bg: #f6f6f8; --card: #fff; --text: #1d1d28; --muted: #8b8b9a; --line: #ececf2; --chip: #f0f0f4; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; font-family: 'Nunito', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
+    button, input, textarea, select { font: inherit; color: inherit; }
+    button { cursor: pointer; border: 0; background: none; }
+    input, textarea, select { outline: none; }
+    input:focus, textarea:focus, select:focus { border-color: var(--purple) !important; }
+
+    .top { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 18px; background: #fff; border-bottom: 1px solid var(--line); }
+    .brand { font-size: 19px; font-weight: 900; }
+    .tabs { display: flex; gap: 4px; margin: 0 auto 0 12px; background: var(--chip); border-radius: 999px; padding: 3px; }
+    .tabs button { padding: 6px 14px; border-radius: 999px; font-weight: 800; font-size: 14px; color: #55556a; }
+    .tabs button.on { background: #fff; color: var(--purple); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .tabs button small { color: var(--muted); font-weight: 700; }
+    .btn { height: 36px; padding: 0 14px; border-radius: 999px; background: var(--chip); font-weight: 800; font-size: 14px; white-space: nowrap; }
+    .btn.primary { background: var(--purple); color: #fff; }
+    .btn.primary.dirty { background: var(--pink); }
+    .btn.sm { height: 30px; padding: 0 11px; font-size: 13px; }
+    .btn.danger { color: #e0334f; }
+    #status { font-size: 13px; font-weight: 800; color: var(--muted); min-width: 110px; }
+    .warn { flex: none; background: #fff6d8; color: #7a5a00; padding: 8px 18px; font-weight: 700; font-size: 13.5px; }
+
+    .view { flex: 1; min-height: 0; display: none; }
+    .view.on { display: grid; }
+    #vRules { grid-template-columns: 330px minmax(0, 1fr) 330px; }
+    @media (max-width: 1100px) { #vRules { grid-template-columns: 300px minmax(0, 1fr); } #vRules .test { display: none; } }
+    @media (max-width: 760px) { #vRules { grid-template-columns: 1fr; } #vRules .list { max-height: 40vh; } }
+    .pane { min-height: 0; overflow: auto; }
+
+    /* Sol: kategorilere göre kural listesi */
+    .list { background: #fff; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
+    .list-tools { position: sticky; top: 0; z-index: 2; background: #fff; padding: 12px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .list-tools input, .list-tools select { height: 34px; border-radius: 10px; border: 1px solid var(--line); padding: 0 10px; font-weight: 700; font-size: 13.5px; background: #fff; }
+    .list-tools .add { grid-column: 1 / -1; display: flex; gap: 6px; }
+    .list-tools .add .btn { flex: 1; }
+    .cat { border-bottom: 1px solid var(--line); }
+    .cat-h { width: 100%; display: flex; align-items: center; gap: 8px; padding: 9px 12px; font-weight: 900; font-size: 13px; color: #55556a; text-transform: uppercase; letter-spacing: .4px; text-align: left; }
+    .cat-h .n { margin-left: auto; color: var(--muted); font-weight: 800; }
+    .cat-h .car { transition: transform .15s; display: inline-block; }
+    .cat.closed .car { transform: rotate(-90deg); }
+    .cat.closed .rows { display: none; }
+    .row { width: 100%; display: block; text-align: left; padding: 8px 12px 9px 28px; border-left: 3px solid transparent; }
+    .row:hover { background: #faf9ff; }
+    .row.on { background: var(--purple-soft); border-left-color: var(--purple); }
+    .row.hit { box-shadow: inset 0 0 0 2px #ffd36b; }
+    .row b { display: block; font-size: 14.5px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row small { display: block; color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row .bd { display: inline-block; font-size: 10.5px; font-weight: 900; padding: 0 6px; border-radius: 999px; margin-left: 4px; vertical-align: 1px; }
+    .bd.fb { background: var(--teal-soft); color: var(--teal); }
+    .bd.tr { background: var(--amber-soft); color: var(--amber); }
+    .bd.ch { background: var(--purple-soft); color: var(--purple); }
+
+    /* Orta: seçili kural */
+    .detail { padding: 18px 22px 40px; }
+    .card { background: var(--card); border-radius: 18px; padding: 16px 18px; box-shadow: 0 2px 10px rgba(60, 40, 120, .05); max-width: 820px; }
+    .card-h { display: flex; gap: 10px; align-items: center; margin-bottom: 4px; }
+    .card-h .name { flex: 1; font-size: 20px; font-weight: 900; border: 1px solid transparent; border-radius: 10px; padding: 4px 8px; margin-left: -8px; }
+    .card-h .name:hover { border-color: var(--line); }
+    label.lb { display: block; font-size: 12.5px; font-weight: 900; color: #6f6f80; margin: 14px 0 6px; }
+    label.lb small { font-weight: 700; color: var(--muted); }
+    .in { height: 36px; border-radius: 10px; border: 1px solid var(--line); padding: 0 12px; font-weight: 700; width: 100%; background: #fff; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+    .seq { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .term { display: inline-flex; align-items: center; gap: 2px; padding: 4px 4px 4px 10px; border-radius: 999px; background: var(--purple); color: #fff; font-weight: 800; font-size: 14px; }
+    .term.grp { background: var(--teal); }
+    .term.vrb { background: #d97706; }
+    .term.bad { background: #e0334f; }
+    .term .alt { opacity: .75; font-weight: 700; }
+    .term button { width: 22px; height: 22px; border-radius: 50%; color: #fff; font-weight: 900; font-size: 12px; }
+    .term button:hover { background: rgba(255,255,255,.22); }
+    .arrow { color: var(--muted); font-weight: 900; }
+    .dashed { height: 32px; border-radius: 10px; border: 1px dashed #c9bdf5; padding: 0 10px; font-weight: 700; min-width: 220px; background: #fff; }
+    .syntax { margin-top: 6px; font-size: 12px; color: var(--muted); font-weight: 700; line-height: 1.6; }
+    .syntax code, .help code { background: var(--chip); border-radius: 6px; padding: 1px 5px; font-size: 12px; color: var(--text); }
+    textarea { width: 100%; min-height: 110px; border-radius: 12px; border: 1px solid var(--line); padding: 10px 12px; font-weight: 600; line-height: 1.55; resize: vertical; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .chip { display: inline-flex; align-items: center; gap: 2px; padding: 4px 4px 4px 10px; border-radius: 999px; background: var(--amber-soft); color: var(--amber); font-weight: 800; font-size: 13px; }
+    .chip.w { background: var(--chip); color: var(--text); }
+    .chip.w.vrb { background: #fdebd3; color: #b45309; }
+    .chip.w.grp { background: var(--teal-soft); color: var(--teal); }
+    .chip button { font-weight: 900; color: inherit; width: 20px; height: 20px; border-radius: 50%; }
+    .empty { text-align: center; color: var(--muted); font-weight: 700; padding: 50px 20px; }
+
+    /* Sağ: dene */
+    .test { background: #fff; border-left: 1px solid var(--line); padding: 16px; }
+    .test h2, .side h2 { font-size: 16px; margin: 0 0 8px; }
+    .test .in { margin-bottom: 4px; }
+    .tchips { display: flex; flex-wrap: wrap; gap: 5px; max-height: 130px; overflow: auto; padding: 2px; }
+    .tchips button { padding: 3px 9px; border-radius: 999px; background: var(--chip); font-size: 12px; font-weight: 800; }
+    .tchips button.on { background: var(--purple); color: #fff; }
+    .out { margin-top: 12px; padding: 12px; border-radius: 14px; background: linear-gradient(180deg, #3b1d63, #241444); color: #fff; min-height: 60px; overflow: hidden; }
+    .out .who { font-size: 12px; font-weight: 800; color: #cfc6e6; margin: 6px 0 4px; clear: both; }
+    .out .bub { display: inline-block; max-width: 90%; background: #2c2442; padding: 7px 12px; border-radius: 16px; border-top-left-radius: 5px; font-weight: 700; margin: 2px 0; }
+    .out .bub.me { background: var(--pink); float: right; border-top-left-radius: 16px; border-top-right-radius: 5px; }
+    .out .info { clear: both; font-size: 12px; color: #cfc6e6; margin-top: 8px; font-weight: 700; }
+    .out .info a { color: #ffd36b; cursor: pointer; text-decoration: underline; }
+    .help { font-size: 12.5px; color: #55556a; line-height: 1.6; margin-top: 16px; }
+
+    /* Gruplar ve fiiller */
+    #vGroups, #vVerbs { grid-template-columns: minmax(0, 1fr) 320px; }
+    @media (max-width: 900px) { #vGroups, #vVerbs { grid-template-columns: 1fr; } }
+    .wrap { padding: 18px 22px 40px; }
+    .wrap-h { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+    .wrap-h h2 { margin: 0 auto 0 0; font-size: 18px; }
+    .wrap-h input { height: 34px; border-radius: 10px; border: 1px solid var(--line); padding: 0 10px; font-weight: 700; }
+    .gcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+    .gcard { background: #fff; border-radius: 16px; padding: 12px 14px; box-shadow: 0 2px 10px rgba(60, 40, 120, .05); }
+    .gcard-h { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .gcard-h .at { font-weight: 900; color: var(--teal); font-size: 17px; }
+    .gcard-h input { flex: 1; min-width: 0; font-size: 16px; font-weight: 900; border: 1px solid transparent; border-radius: 8px; padding: 3px 6px; }
+    .gcard-h input:hover { border-color: var(--line); }
+    .gcard-h small { color: var(--muted); font-weight: 700; font-size: 12px; white-space: nowrap; }
+    .vtable { background: #fff; border-radius: 16px; box-shadow: 0 2px 10px rgba(60, 40, 120, .05); overflow: hidden; }
+    .vrow { display: grid; grid-template-columns: 170px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+    .vrow:last-child { border-bottom: 0; }
+    .vrow .vb { font-weight: 900; }
+    .vrow .vb small { display: block; color: var(--muted); font-weight: 700; font-size: 11.5px; }
+    .vrow.hit { background: #fffbe8; }
+    .side { background: #fff; border-left: 1px solid var(--line); padding: 16px; }
+    .side .res { margin-top: 10px; font-size: 13.5px; font-weight: 700; line-height: 1.6; }
+    .ok { color: var(--teal); } .no { color: #e0334f; }
+
+    .modal { position: fixed; inset: 0; z-index: 50; background: rgba(15, 8, 30, .45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .modal[hidden] { display: none; }
+    .modal-box { background: #fff; border-radius: 20px; padding: 20px 22px; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0, 0, 0, .3); }
+    .modal-box h2 { margin: 0 0 10px; font-size: 19px; }
+    #importInfo { font-size: 14px; font-weight: 700; line-height: 1.6; }
+    #importInfo .warnl { color: #b45309; font-size: 13px; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .modal-help { font-size: 12.5px; color: var(--muted); font-weight: 600; line-height: 1.55; margin: 12px 0 0; }
+  </style>
+</head>
+<body>
+<a href="studio.html" style="display:inline-block;margin:8px 0 0 14px;font:600 13px system-ui,sans-serif;color:#0089c4;text-decoration:none">← Gracie Stüdyo</a>
+  <header class="top">
+    <div class="brand">🤖 Bot editörü</div>
+    <nav class="tabs" id="tabs">
+      <button data-tab="rules" class="on">Kurallar <small id="nRules"></small></button>
+      <button data-tab="addons">🪄 Otomatik ekler <small id="nAddons"></small></button>
+      <button data-tab="groups">Kelime grupları <small id="nGroups"></small></button>
+      <button data-tab="verbs">Fiiller <small id="nVerbs"></small></button>
+    </nav>
+    <span id="status"></span>
+    <button class="btn" id="exportBtn" title="Kuralları, grupları ve fiilleri JSON olarak indir">⬇️ Dışa aktar</button>
+    <button class="btn" id="importBtn" title="JSON dosyasından kural yükle">⬆️ İçe aktar</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <button class="btn primary" id="save">Kaydet</button>
+  </header>
+
+  <!-- İçe aktarma penceresi -->
+  <div class="modal" id="importModal" hidden>
+    <div class="modal-box">
+      <h2>⬆️ İçe aktar</h2>
+      <div id="importInfo"></div>
+      <div class="modal-btns">
+        <button class="btn primary" data-imp="merge">Birleştir</button>
+        <button class="btn danger" data-imp="replace">Tümünü değiştir</button>
+        <button class="btn" data-imp="cancel">Vazgeç</button>
+      </div>
+      <p class="modal-help"><b>Birleştir:</b> aynı kimlikli kurallar güncellenir, yeniler eklenir; aynı adlı grup ve fiillere yeni kelime/kökler eklenir.<br>
+        <b>Tümünü değiştir:</b> editördeki her şey dosyadakiyle değişir.<br>Her iki durumda da dosyaya yazmak için sonra <b>Kaydet</b>'e bas.</p>
+    </div>
+  </div>
+  <div id="warn"></div>
+
+  <!-- Kurallar -->
+  <div class="view on" id="vRules">
+    <aside class="list pane">
+      <div class="list-tools">
+        <input id="q" type="search" placeholder="Kural ara…">
+        <select id="sort" title="Sıralama">
+          <option value="name">İsim</option>
+          <option value="score">Özgüllük</option>
+          <option value="new">Son eklenen</option>
+        </select>
+        <div class="add"><button class="btn sm" id="addRule">+ Kural</button><button class="btn sm" id="addFb">+ Yedek cevap</button></div>
+      </div>
+      <div id="ruleList"></div>
+    </aside>
+    <section class="detail pane" id="detail"></section>
+    <aside class="test pane">
+      <h2>🧪 Dene</h2>
+      <label class="lb" id="tMsgLb">Senin mesajın</label>
+      <input class="in" id="tMsg" placeholder="ör. ne yapıyorsun, seni seviyorum">
+      <label class="lb">Karakter adı <small>(karakter şartı için)</small></label>
+      <input class="in" id="tName" placeholder="ör. Vesper">
+      <label class="lb">Özellikleri <small>(kişilik şartı için)</small></label>
+      <div class="tchips" id="tTraits"></div>
+      <div class="out" id="tOut"></div>
+      <div class="help">
+        <b>Kelime yazımı</b><br>
+        <code>kahve</code> mesajda geçmesi yeter (ekler olur)<br>
+        <code>yap-</code> kelime başında bu kök<br>
+        <code>=sa</code> sadece tam kelime<br>
+        <code>+yapmak</code> fiil listesindeki tüm çekimler<br>
+        <code>@selam</code> kelime grubu<br>
+        <code>a|b</code> alternatif (biri yeter)<br><br>
+        Ayrıntılı anlatım: <code>docs/BOT-KURALLARI.md</code><br><br>
+        <span id="helpAddons" hidden><b>🪄 Otomatik ekler</b> karakter adına yazdığın her mesajda (bot cevapları dahil) çalışır: kelimeler geçerse mesajın <b>başına</b> ya da <b>sonuna</b> ekler, veya <b>önce/sonra ayrı mesaj</b> gönderir. Kelimesiz ek = her mesaj. Olasılık % ile sıklığı ayarla. Uygulamada sohbet ⋮ → 🪄 Otomatik ekler.<br><br></span>
+        <b>Kurallar</b> mesajda <b>sırayla</b> aranır; en çok kelimesi olan, sonra kişilik ve karakter şartı olan kazanır. Kelimesiz kural = yedek cevap.<br>
+        <b>Cevaplar</b>: her satır bir seçenek · <code>||</code> ayrı baloncuk · <code>{sen}</code> <code>{ben}</code><br><br>
+        Kaydettikten sonra uygulamayı yenile. Kısayol: <code>Ctrl+S</code>.
+      </div>
+    </aside>
+  </div>
+
+  <!-- Kelime grupları -->
+  <div class="view" id="vGroups">
+    <section class="wrap pane">
+      <div class="wrap-h"><h2>Kelime grupları</h2><input id="gq" type="search" placeholder="Grup ara…"><button class="btn primary" id="addGroup">+ Yeni grup</button></div>
+      <div class="gcards" id="groupList"></div>
+    </section>
+    <aside class="side pane">
+      <h2>🧪 Kelime dene</h2>
+      <input class="in" id="gTest" placeholder="ör. merhabalar, yapabiliyorum">
+      <div class="res" id="gRes"></div>
+      <div class="help">
+        Bir grup, kuralda tek bir kelime gibi kullanılır: kurala <code>@selam</code> yazınca gruptaki herhangi bir kelime yeter.<br>
+        Grubun içinde de <code>yap-</code> ve <code>+fiil</code> kullanılabilir.<br>
+        Grubun adını değiştirince onu kullanan kurallar da güncellenir.
+      </div>
+    </aside>
+  </div>
+
+  <!-- Fiiller -->
+  <div class="view" id="vVerbs">
+    <section class="wrap pane">
+      <div class="wrap-h"><h2>Fiiller</h2><input id="vq" type="search" placeholder="Fiil ara…">
+        <input id="vNew" placeholder="yeni fiil (ör. koşmak)"><button class="btn primary" id="addVerb">+ Ekle</button></div>
+      <div class="vtable" id="verbList"></div>
+    </section>
+    <aside class="side pane">
+      <h2>🧪 Çekim dene</h2>
+      <input class="in" id="vTest" placeholder="ör. yapabiliyorum, gidiyorduk">
+      <div class="res" id="vRes"></div>
+      <div class="help">
+        Kurala <code>+yapmak</code> yazınca bu listedeki <b>kökler</b> kelime başında aranır: <i>yap</i> → yapmak, yapıyor, yapabiliyorum, yaptım…<br><br>
+        <b>Ünsüz yumuşaması</b> için ikinci kök ekle: <i>git</i> + <i>gid</i> (gidiyorum), <i>et</i> → <i>ed</i>.<br>
+        <b>Düzensiz</b> fiillerde çekimleri kök olarak yaz: demek → <i>diyor, dedi…</i><br>
+        Çok kısa kökler (<i>al</i>, <i>ol</i>) başka kelimeleri de yakalayabilir (alo, olay); onlarda uzun çekimler yazmak daha güvenli.
+      </div>
+    </aside>
+  </div>
+
+  <datalist id="traitList"></datalist>
+  <datalist id="catList"></datalist>
+  <datalist id="termList"></datalist>
+
+  <script src="../js/data/traits.js"></script>
+  <script src="../js/amor/bot.js"></script>
+  <script>
+  (() => {
+    const $ = s => document.querySelector(s);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const lower = s => String(s || '').toLocaleLowerCase('tr').trim();
+    const uid = () => 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const BOT = Stories.Bot;
+    const allTraits = Stories.Traits ? Stories.Traits.all : [];
+    const FB = 'Yedek';
+
+    let data = { rules: [], addons: [], groups: [], verbs: [] };
+    let dirty = false, canSave = true;
+    const ui = { tab: 'rules', kind: 'rules', sel: null, selBy: {}, q: '', sort: 'name', closed: new Set(), gq: '', vq: '' };
+    // Kurallar ve otomatik ekler aynı ekranı paylaşır: coll() açık listeyi, TX() cevap/ek alanının adını verir
+    const A = () => ui.kind === 'addons';
+    const coll = () => data[ui.kind];
+    const TX = () => (A() ? 'add' : 'reply');
+    const MODES = { prepend: 'Başına ekle', append: 'Sonuna ekle', before: 'Önce ayrı mesaj', message: 'Sonra ayrı mesaj' };
+    const MODE_OPTS = { prepend: '⬅️ Mesajın başına ekle', append: '➡️ Mesajın sonuna ekle', before: '⬆️ Önce ayrı mesaj gönder', message: '⬇️ Sonra ayrı mesaj gönder' };
+    const okMode = m => (MODES[m] ? m : 'append');
+    const test = { traits: [] };
+
+    /* ---------- Yardımcılar ---------- */
+    const isFb = r => !A() && !r.when.filter(Boolean).length;
+    const catOf = r => (r.category || '').trim() || (isFb(r) ? FB : 'Genel');
+    const title = r => r.name || (isFb(r) ? 'Yedek cevap' : r.when.join(' → ') || (A() ? 'Her mesaj' : 'Adsız kural'));
+    const ruleById = id => coll().find(r => r.id === id);
+    const groupByName = n => data.groups.find(g => lower(g.name) === lower(n));
+    const verbByName = n => data.verbs.find(v => lower(v.verb) === lower(n));
+
+    // Terim türü: grup / fiil / kök / kelime; bilinmeyen grup veya fiil "bad"
+    function termKind(t) {
+      const parts = t.split('|');
+      if (parts.some(p => p[0] === '@' && !groupByName(p.slice(1)))) return 'bad';
+      if (parts.every(p => p[0] === '@')) return 'grp';
+      if (parts.every(p => p[0] === '+' || p.endsWith('-') || p[0] === '=')) return 'vrb';
+      return '';
+    }
+    const termTitle = t => BOT.expand(t, data).map(m => m.s + (m.whole ? ' (tam)' : m.start ? '…' : '')).join(', ');
+
+    function setDirty(v = true) {
+      dirty = v;
+      $('#save').classList.toggle('dirty', v);
+      $('#status').textContent = v ? '● kaydedilmedi' : '';
+      counts();
+    }
+    function counts() {
+      $('#nRules').textContent = data.rules.length;
+      $('#nAddons').textContent = data.addons.length;
+      $('#nGroups').textContent = data.groups.length;
+      $('#nVerbs').textContent = data.verbs.length;
+    }
+    function refreshLists() {
+      $('#traitList').innerHTML = allTraits.map(t => `<option value="${esc(t)}">`).join('');
+      $('#catList').innerHTML = [...new Set(coll().map(catOf))].sort((a, b) => a.localeCompare(b, 'tr')).map(c => `<option value="${esc(c)}">`).join('');
+      $('#termList').innerHTML = data.groups.map(g => `<option value="@${esc(g.name)}">grup: ${esc(g.words.slice(0, 4).join(', '))}</option>`).join('') +
+        data.verbs.map(v => `<option value="+${esc(v.verb)}">fiil: ${esc(v.stems.join(', '))}</option>`).join('');
+    }
+
+    /* ---------- Yükle ---------- */
+    async function load() {
+      try {
+        const r = await fetch('/api/bot-rules', { cache: 'no-store' });
+        if (!r.ok) throw new Error();
+        data = await r.json();
+      } catch (e) {
+        canSave = false;
+        await new Promise(res => { const s = document.createElement('script'); s.src = '../js/data/bot-rules.js'; s.onload = s.onerror = res; document.body.appendChild(s); });
+        data = JSON.parse(JSON.stringify((window.Stories && Stories.BOT_RULES) || {}));
+        $('#warn').innerHTML = '<div class="warn">⚠️ Editör sunucusuz açıldı. Kaydetmek için <b>gracie-studyo.bat</b> ile aç. Şimdilik “Kaydet” dosyayı indirir; indirileni <code>js/data/bot-rules.js</code> yerine koymalısın.</div>';
+      }
+      data.rules = (data.rules || []).map(r => Object.assign({ id: uid(), name: '', category: '', when: [], reply: [], traits: [], chars: [], note: '' }, r));
+      data.addons = (data.addons || []).map(a => Object.assign({ id: uid(), name: '', category: '', when: [], add: [], mode: 'append', chance: 100, traits: [], chars: [], note: '' }, a));
+      data.groups = (data.groups || []).map(g => Object.assign({ name: '', words: [] }, g));
+      data.verbs = (data.verbs || []).map(v => Object.assign({ verb: '', stems: [] }, v));
+      ui.sel = data.rules[0] ? data.rules[0].id : null;
+      counts(); refreshLists(); renderRules(); renderGroups(); renderVerbs(); runTest();
+    }
+
+    /* ---------- Sekmeler ---------- */
+    $('#tabs').onclick = e => {
+      const b = e.target.closest('[data-tab]');
+      if (!b) return;
+      ui.tab = b.dataset.tab;
+      document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+      const listTab = ui.tab === 'rules' || ui.tab === 'addons';
+      ['rules', 'groups', 'verbs'].forEach(t => $('#v' + t[0].toUpperCase() + t.slice(1)).classList.toggle('on', t === (listTab ? 'rules' : ui.tab)));
+      if (listTab && ui.kind !== ui.tab) {
+        ui.selBy[ui.kind] = ui.sel;
+        ui.kind = ui.tab;
+        ui.sel = ui.selBy[ui.kind] || ((coll()[0] || {}).id || null);
+        ui.q = ''; $('#q').value = '';
+        $('#addRule').textContent = A() ? '+ Ek' : '+ Kural';
+        $('#addFb').hidden = A();
+        $('#q').placeholder = A() ? 'Ek ara…' : 'Kural ara…';
+        $('#tMsgLb').textContent = A() ? 'Karakterin mesajı' : 'Senin mesajın';
+        $('#tMsg').placeholder = A() ? 'ör. bunu ben yaptım' : 'ör. ne yapıyorsun, seni seviyorum';
+        $('#helpAddons').hidden = !A();
+      }
+      refreshLists();
+      if (listTab) { renderRules(); runTest(); }
+      if (ui.tab === 'groups') renderGroups();
+      if (ui.tab === 'verbs') renderVerbs();
+    };
+
+    /* ================= KURALLAR ================= */
+    const matchesQ = r => !ui.q || lower([r.name, r.category, r.when.join(' '), r[TX()].join(' '), r.traits.join(' '), r.chars.join(' '), r.note].join(' ')).includes(ui.q);
+
+    function sorted(list) {
+      const by = {
+        name: (a, b) => title(a).localeCompare(title(b), 'tr'),
+        score: (a, b) => BOT.score(b) - BOT.score(a) || title(a).localeCompare(title(b), 'tr'),
+        new: (a, b) => coll().indexOf(b) - coll().indexOf(a)
+      }[ui.sort];
+      return list.slice().sort(by);
+    }
+
+    function renderList() {
+      const list = coll().filter(matchesQ);
+      const cats = {};
+      list.forEach(r => { (cats[catOf(r)] = cats[catOf(r)] || []).push(r); });
+      const names = Object.keys(cats).sort((a, b) => (a === FB) - (b === FB) || a.localeCompare(b, 'tr'));
+      $('#ruleList').innerHTML = names.length ? names.map(c => `
+        <div class="cat${ui.closed.has(c) && !ui.q ? ' closed' : ''}" data-cat="${esc(c)}">
+          <button class="cat-h" data-cath><span class="car">▾</span>${esc(c)}<span class="n">${cats[c].length}</span></button>
+          <div class="rows">${sorted(cats[c]).map(r => `
+            <button class="row${r.id === ui.sel ? ' on' : ''}" data-id="${r.id}">
+              <b>${esc(title(r))}${isFb(r) ? '<span class="bd fb">yedek</span>' : ''}${r.traits.length ? `<span class="bd tr">💫 ${r.traits.length}</span>` : ''}${r.chars.length ? '<span class="bd ch">👤</span>' : ''}</b>
+              <small>${isFb(r) ? 'hiçbir kural eşleşmezse' : r.when.length ? esc(r.when.join(' → ')) : 'her mesaj'} · ${A() ? `${MODES[r.mode] || MODES.append} · %${r.chance}` : `${r.reply.length} cevap`}</small>
+            </button>`).join('')}</div>
+        </div>`).join('') : `<div class="empty">${coll().length ? 'Aramaya uyan kayıt yok' : A() ? 'Henüz ek yok. “+ Ek” ile başla.' : 'Henüz kural yok'}</div>`;
+    }
+
+    function termHtml(t, i, n) {
+      const parts = t.split('|');
+      return `<span class="term ${termKind(t)}" data-term="${i}" title="${esc(termTitle(t) || 'bilinmeyen grup/fiil')}">${esc(parts[0])}${parts.length > 1 ? ` <span class="alt">/ ${esc(parts.slice(1).join(' / '))}</span>` : ''}
+        ${i > 0 ? '<button data-tmove="-1" title="Sola al">‹</button>' : ''}${i < n - 1 ? '<button data-tmove="1" title="Sağa al">›</button>' : ''}<button data-tdel title="Sil">✕</button></span>`;
+    }
+
+    function renderDetail() {
+      const r = ruleById(ui.sel);
+      if (!r) { $('#detail').innerHTML = `<div class="empty">Soldan bir ${A() ? 'ek' : 'kural'} seç ya da “${A() ? '+ Ek' : '+ Kural'}” ile yenisini ekle.</div>`; return; }
+      const when = r.when.filter(Boolean);
+      $('#detail').innerHTML = `<div class="card" data-rule="${r.id}">
+        <div class="card-h">
+          <input class="name" data-f="name" value="${esc(r.name)}" placeholder="${esc(title(r))}">
+          <button class="btn sm" data-dup>Çoğalt</button>
+          <button class="btn sm danger" data-del>Sil</button>
+        </div>
+        <div class="grid2">
+          <div><label class="lb">Kategori</label><input class="in" data-f="category" list="catList" value="${esc(r.category)}" placeholder="${esc(catOf(r))}"></div>
+          <div><label class="lb">Not <small>(sadece sana görünür)</small></label><input class="in" data-f="note" value="${esc(r.note)}"></div>
+        </div>
+        ${A() ? `<div class="grid2">
+          <div><label class="lb">Ne yapsın?</label>
+            <select class="in" data-f="mode">${Object.keys(MODES).map(k => `<option value="${k}"${okMode(r.mode) === k ? ' selected' : ''}>${MODE_OPTS[k]}</option>`).join('')}</select></div>
+          <div><label class="lb">Olasılık <small>(her eşleşmede % kaç ihtimalle)</small></label>
+            <input class="in" type="number" min="0" max="100" step="5" data-f="chance" value="${esc(r.chance)}"></div>
+        </div>` : ''}
+        <label class="lb">Kelimeler <small>(${A() ? 'karakterin mesajında' : 'mesajda'} bu sırayla geçmeli · Enter ile ekle${when.length ? '' : A() ? ' · boşsa her mesaj' : ' · boşsa yedek cevap'})</small></label>
+        <div class="seq">${when.map((t, k) => termHtml(t, k, when.length) + (k < when.length - 1 ? '<span class="arrow">→</span>' : '')).join('')}
+          <input class="dashed" data-tadd list="termList" placeholder="${when.length ? '+ sonraki kelime' : 'kelime, yap-, +fiil, @grup'}"></div>
+        <div class="syntax"><code>kahve</code> geçmesi yeter · <code>yap-</code> kök · <code>=sa</code> tam kelime · <code>+yapmak</code> fiil · <code>@selam</code> grup · <code>a|b</code> alternatif — bir çipin üstünde durunca neleri yakaladığını görürsün</div>
+        ${A() ? `<label class="lb">Eklenecekler <small>(her satır bir seçenek, biri rastgele · emoji ya da metin · {sen} {ben})</small></label>
+        <textarea data-f="add" placeholder="😏&#10;✨&#10;değil mi {sen}?">${esc(r.add.join('\n'))}</textarea>`
+        : `<label class="lb">Cevaplar <small>(her satır bir seçenek · || ayrı baloncuk · {sen} {ben})</small></label>
+        <textarea data-f="reply" placeholder="Selam {sen}! 👋&#10;Heyy||nasılsın?">${esc(r.reply.join('\n'))}</textarea>`}
+        <div class="grid2">
+          <div><label class="lb">Kişilik şartı <small>(hepsi olmalı)</small></label>
+            <div class="chips">${r.traits.map(t => `<span class="chip">${esc(t)}<button data-trdel="${esc(t)}">✕</button></span>`).join('')}
+              <input class="dashed" data-tradd list="traitList" placeholder="+ özellik (Enter)" style="min-width:160px"></div></div>
+          <div><label class="lb">Karakter <small>(virgülle; boşsa herkes)</small></label>
+            <input class="in" data-f="chars" value="${esc(r.chars.join(', '))}" placeholder="ör. Vesper, Mia"></div>
+        </div>
+      </div>`;
+    }
+
+    function renderRules() { renderList(); renderDetail(); }
+
+    function select(id) {
+      ui.sel = id;
+      document.querySelectorAll('.row').forEach(x => x.classList.toggle('on', x.dataset.id === id));
+      renderDetail();
+    }
+
+    $('#ruleList').onclick = e => {
+      const h = e.target.closest('[data-cath]');
+      if (h) { const c = h.parentElement.dataset.cat; ui.closed.has(c) ? ui.closed.delete(c) : ui.closed.add(c); h.parentElement.classList.toggle('closed'); return; }
+      const row = e.target.closest('[data-id]');
+      if (row) select(row.dataset.id);
+    };
+    $('#q').oninput = e => { ui.q = lower(e.target.value); renderList(); };
+    $('#sort').onchange = e => { ui.sort = e.target.value; renderList(); };
+
+    $('#detail').addEventListener('click', e => {
+      const r = ruleById(ui.sel);
+      if (!r) return;
+      const term = e.target.closest('[data-term]');
+      if (e.target.closest('[data-del]')) {
+        if (!confirm(`“${title(r)}” silinsin mi?`)) return;
+        const list = coll(), i = list.indexOf(r);
+        list.splice(i, 1);
+        ui.sel = (list[i] || list[i - 1] || {}).id || null;
+        renderRules(); setDirty(); runTest();
+      } else if (e.target.closest('[data-dup]')) {
+        const copy = Object.assign(JSON.parse(JSON.stringify(r)), { id: uid(), name: r.name ? r.name + ' (kopya)' : '' });
+        coll().splice(coll().indexOf(r) + 1, 0, copy);
+        ui.sel = copy.id; renderRules(); setDirty();
+      } else if (term && e.target.closest('[data-tdel]')) {
+        r.when.splice(+term.dataset.term, 1); renderRules(); setDirty(); runTest();
+      } else if (term && e.target.closest('[data-tmove]')) {
+        const a = +term.dataset.term, b = a + +e.target.closest('[data-tmove]').dataset.tmove;
+        [r.when[a], r.when[b]] = [r.when[b], r.when[a]]; renderRules(); setDirty(); runTest();
+      } else if (e.target.closest('[data-trdel]')) {
+        r.traits = r.traits.filter(t => t !== e.target.closest('[data-trdel]').dataset.trdel); renderRules(); setDirty(); runTest();
+      }
+    });
+
+    // Yazılan kelimeyi terime çevir: "yapmak" listede bir fiilse "+yapmak" olur
+    function toTerm(v) {
+      return v.split('|').map(p => p.trim()).filter(Boolean).map(p => (p[0] !== '+' && p[0] !== '@' && verbByName(p) && / /.test(p) === false ? '+' + p : p)).join('|');
+    }
+
+    $('#detail').addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const add = e.target.closest('[data-tadd]'), tr = e.target.closest('[data-tradd]');
+      if (!add && !tr) return;
+      e.preventDefault();
+      const r = ruleById(ui.sel), v = e.target.value.trim();
+      if (!v) return;
+      if (add) r.when.push(toTerm(v)); else if (!r.traits.includes(v)) r.traits.push(v);
+      renderRules(); setDirty(); runTest();
+      const again = $(add ? '[data-tadd]' : '[data-tradd]');
+      if (again) again.focus();
+    });
+
+    $('#detail').addEventListener('input', e => {
+      const f = e.target.dataset.f, r = ruleById(ui.sel);
+      if (!f || !r) return;
+      if (f === 'reply' || f === 'add') r[f] = e.target.value.split('\n').map(s => s.trim()).filter(Boolean);
+      else if (f === 'chance') r.chance = Math.max(0, Math.min(100, +e.target.value || 0));
+      else if (f === 'chars') r.chars = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+      else r[f] = e.target.value;
+      setDirty(); runTest();
+    });
+    // Liste satırı (isim, kategori, rozetler) alandan çıkınca güncellenir
+    $('#detail').addEventListener('change', e => { if (e.target.dataset.f) { renderList(); refreshLists(); } });
+
+    function addRule(fb) {
+      // Yeni kural, seçili kuralın kategorisine eklenir
+      const cur = ruleById(ui.sel);
+      const base = { id: uid(), name: '', category: fb ? FB : (cur && catOf(cur) !== FB ? cur.category : ''), when: [], traits: [], chars: [], note: '' };
+      const r = Object.assign(base, A() ? { add: [], mode: 'append', chance: 100 } : { reply: [] });
+      coll().push(r);
+      ui.sel = r.id; ui.q = ''; $('#q').value = '';
+      ui.closed.delete(catOf(r));
+      renderRules(); setDirty();
+      const row = document.querySelector(`.row[data-id="${r.id}"]`);
+      if (row) row.scrollIntoView({ block: 'nearest' });
+      $(fb ? '[data-f=reply]' : '[data-f=name]').focus();
+    }
+    $('#addRule').onclick = () => addRule(false);
+    $('#addFb').onclick = () => addRule(true);
+
+    /* ---------- Dene ---------- */
+    $('#tTraits').innerHTML = allTraits.map(t => `<button data-tt="${esc(t)}">${esc(t)}</button>`).join('');
+    $('#tTraits').onclick = e => {
+      const b = e.target.closest('[data-tt]');
+      if (!b) return;
+      const t = b.dataset.tt;
+      test.traits = test.traits.includes(t) ? test.traits.filter(x => x !== t) : test.traits.concat(t);
+      b.classList.toggle('on');
+      runTest();
+    };
+    $('#tName').oninput = runTest;
+    $('#tMsg').oninput = runTest;
+
+    function runTest() {
+      document.querySelectorAll('.row.hit').forEach(c => c.classList.remove('hit'));
+      const msg = $('#tMsg').value.trim(), out = $('#tOut');
+      if (!msg) { out.innerHTML = '<div class="info">Bir mesaj yaz; hangi kuralın ne cevap vereceğini burada görürsün.</div>'; return; }
+      const ch = { name: $('#tName').value.trim() || 'Karakter', traits: test.traits };
+      if (A()) {
+        // Ek: olasılık yok sayılır, eşleşen ek gösterilir
+        const res = BOT.addons(data, msg, ch), vars = { sen: 'Sen', ben: ch.name.split(' ')[0] };
+        const got = BOT.ADD_MODES.map(k => res[k]).filter(Boolean);
+        if (!got.length) { out.innerHTML = `<div class="who">${esc(ch.name)}</div><div class="bub">${esc(msg)}</div><div class="info">Eşleşen ek yok; mesaj olduğu gibi kalır.</div>`; return; }
+        const hl = a => `<b style="color:#ffd36b">${esc(BOT.addText(a, vars))}</b>`;
+        out.innerHTML = `<div class="who">${esc(ch.name)}</div>
+          ${res.before ? `<div class="bub">${hl(res.before)}</div><br>` : ''}
+          <div class="bub">${res.prepend ? hl(res.prepend) + ' ' : ''}${esc(msg)}${res.append ? ' ' + hl(res.append) : ''}</div><br>
+          ${res.message ? `<div class="bub">${hl(res.message)}</div><br>` : ''}
+          <div class="info">${got.map(a => `${MODES[okMode(a.mode)]}: <a data-go="${a.id}">${esc(title(a))}</a> (%${a.chance})`).join('<br>')}</div>`;
+        got.forEach(a => { const row = document.querySelector(`.row[data-id="${a.id}"]`); if (row) row.classList.add('hit'); });
+        return;
+      }
+      const m = BOT.best(data, msg, ch);
+      if (!m) { out.innerHTML = `<div class="bub me">${esc(msg)}</div><div class="info">Uygun kural yok (yedek cevap da yok).</div>`; return; }
+      const parts = BOT.reply(m.rule, { sen: 'Sen', ben: ch.name.split(' ')[0] });
+      out.innerHTML = `<div class="bub me">${esc(msg)}</div><div class="who">${esc(ch.name)}</div>${parts.map(p => `<div class="bub">${esc(p)}</div><br>`).join('')}
+        <div class="info">${m.fallback ? 'Yedek cevap' : 'Kural'}: <a data-go="${m.rule.id}">${esc(title(m.rule))}</a> · ${m.rule.reply.length} seçenekten biri</div>`;
+      const row = document.querySelector(`.row[data-id="${m.rule.id}"]`);
+      if (row) row.classList.add('hit');
+    }
+    $('#tOut').onclick = e => {
+      const a = e.target.closest('[data-go]');
+      if (!a) return;
+      const r = ruleById(a.dataset.go);
+      ui.q = ''; $('#q').value = ''; ui.closed.delete(catOf(r));
+      ui.sel = r.id; renderRules(); runTest();
+      const row = document.querySelector(`.row[data-id="${r.id}"]`);
+      if (row) row.scrollIntoView({ block: 'center' });
+    };
+
+    /* ================= KELİME GRUPLARI ================= */
+    const usesGroup = name => data.rules.concat(data.addons).filter(r => r.when.some(t => t.split('|').some(p => lower(p) === '@' + lower(name)))).length;
+
+    function renderGroups() {
+      const list = data.groups.filter(g => !ui.gq || lower(g.name + ' ' + g.words.join(' ')).includes(ui.gq));
+      $('#groupList').innerHTML = list.length ? list.map(g => {
+        const i = data.groups.indexOf(g);
+        return `<div class="gcard" data-g="${i}">
+          <div class="gcard-h"><span class="at">@</span><input data-gname value="${esc(g.name)}" placeholder="grup_adı"><small>${usesGroup(g.name)} kuralda</small>
+            <button class="btn sm danger" data-gdel>Sil</button></div>
+          <div class="chips">${g.words.map((w, k) => `<span class="chip w${w[0] === '+' || w.endsWith('-') ? ' vrb' : w[0] === '@' ? ' grp' : ''}" title="${esc(termTitle(w))}">${esc(w)}<button data-wdel="${k}">✕</button></span>`).join('')}
+            <input class="dashed" data-wadd list="termList" placeholder="+ kelime (Enter)" style="min-width:150px"></div>
+        </div>`;
+      }).join('') : `<div class="empty">${data.groups.length ? 'Aramaya uyan grup yok' : 'Henüz grup yok'}</div>`;
+    }
+    $('#gq').oninput = e => { ui.gq = lower(e.target.value); renderGroups(); };
+    $('#addGroup').onclick = () => {
+      let n = 'yeni_grup', k = 2;
+      while (groupByName(n)) n = 'yeni_grup' + k++;
+      data.groups.unshift({ name: n, words: [] });
+      ui.gq = ''; $('#gq').value = '';
+      renderGroups(); setDirty(); refreshLists();
+      const inp = $('[data-g="0"] [data-gname]'); inp.focus(); inp.select();
+    };
+    $('#groupList').addEventListener('click', e => {
+      const card = e.target.closest('[data-g]');
+      if (!card) return;
+      const g = data.groups[+card.dataset.g];
+      if (e.target.closest('[data-gdel]')) {
+        const n = usesGroup(g.name);
+        if (!confirm(`@${g.name} silinsin mi?${n ? ` ${n} kural bu grubu kullanıyor; o kurallarda kırmızı görünür.` : ''}`)) return;
+        data.groups.splice(+card.dataset.g, 1); renderGroups(); setDirty(); refreshLists();
+      } else if (e.target.closest('[data-wdel]')) {
+        g.words.splice(+e.target.closest('[data-wdel]').dataset.wdel, 1); renderGroups(); setDirty(); groupTest();
+      }
+    });
+    $('#groupList').addEventListener('keydown', e => {
+      if (e.key !== 'Enter' || !e.target.closest('[data-wadd]')) return;
+      e.preventDefault();
+      const i = +e.target.closest('[data-g]').dataset.g, g = data.groups[i];
+      const v = e.target.value.trim();
+      if (!v) return;
+      const w = toTerm(v);
+      if (!g.words.includes(w)) g.words.push(w);
+      renderGroups(); setDirty(); groupTest();
+      $(`[data-g="${i}"] [data-wadd]`).focus();
+    });
+    // Grubun adı değişince kurallardaki @eski → @yeni
+    $('#groupList').addEventListener('change', e => {
+      if (!e.target.matches('[data-gname]')) return;
+      const g = data.groups[+e.target.closest('[data-g]').dataset.g];
+      const old = g.name, nw = e.target.value.trim().replace(/^@/, '').replace(/\s+/g, '_');
+      if (!nw || nw === old) { e.target.value = old; return; }
+      if (groupByName(nw)) { alert('Bu adda bir grup zaten var'); e.target.value = old; return; }
+      const fix = t => t.split('|').map(p => (lower(p) === '@' + lower(old) ? '@' + nw : p)).join('|');
+      data.rules.concat(data.addons).forEach(r => { r.when = r.when.map(fix); });
+      data.groups.forEach(x => { x.words = x.words.map(fix); });
+      g.name = nw;
+      renderGroups(); setDirty(); refreshLists();
+    });
+    function groupTest() {
+      const v = $('#gTest').value.trim();
+      if (!v) { $('#gRes').innerHTML = ''; return; }
+      const hit = data.groups.filter(g => BOT.catches(v, '@' + g.name, data));
+      $('#gRes').innerHTML = hit.length ? `<span class="ok">✓ Yakalayan gruplar:</span><br>${hit.map(g => '@' + esc(g.name)).join(', ')}` : '<span class="no">✗ Hiçbir grup yakalamıyor</span>';
+    }
+    $('#gTest').oninput = groupTest;
+
+    /* ================= FİİLLER ================= */
+    const usesVerb = v => data.rules.concat(data.addons).filter(r => r.when.some(t => t.split('|').some(p => lower(p) === '+' + lower(v)))).length +
+      data.groups.filter(g => g.words.some(w => lower(w) === '+' + lower(v))).length;
+
+    function renderVerbs() {
+      const q = $('#vTest').value.trim();
+      const list = data.verbs.filter(v => !ui.vq || lower(v.verb + ' ' + v.stems.join(' ')).includes(ui.vq))
+        .sort((a, b) => a.verb.localeCompare(b.verb, 'tr'));
+      $('#verbList').innerHTML = list.length ? list.map(v => {
+        const i = data.verbs.indexOf(v);
+        const hit = q && BOT.catches(q, '+' + v.verb, data);
+        return `<div class="vrow${hit ? ' hit' : ''}" data-v="${i}">
+          <div class="vb">${esc(v.verb)}<small>${usesVerb(v.verb)} yerde kullanılıyor</small></div>
+          <div class="chips">${v.stems.map((s, k) => `<span class="chip w vrb">${esc(s)}…<button data-sdel="${k}">✕</button></span>`).join('')}
+            <input class="dashed" data-sadd placeholder="+ kök" style="min-width:90px;width:110px"></div>
+          <button class="btn sm danger" data-vdel>Sil</button>
+        </div>`;
+      }).join('') : `<div class="empty">${data.verbs.length ? 'Aramaya uyan fiil yok' : 'Henüz fiil yok'}</div>`;
+    }
+    $('#vq').oninput = e => { ui.vq = lower(e.target.value); renderVerbs(); };
+    function addVerb() {
+      const v = lower($('#vNew').value);
+      if (!v) return;
+      if (verbByName(v)) { alert('Bu fiil zaten var'); return; }
+      const stem = v.replace(/\s+/g, ' ').replace(/m[ae]k$/, '');
+      data.verbs.push({ verb: v, stems: stem ? [stem] : [] });
+      $('#vNew').value = '';
+      ui.vq = ''; $('#vq').value = '';
+      renderVerbs(); setDirty(); refreshLists();
+    }
+    $('#addVerb').onclick = addVerb;
+    $('#vNew').onkeydown = e => { if (e.key === 'Enter') addVerb(); };
+    $('#verbList').addEventListener('click', e => {
+      const row = e.target.closest('[data-v]');
+      if (!row) return;
+      const v = data.verbs[+row.dataset.v];
+      if (e.target.closest('[data-vdel]')) {
+        const n = usesVerb(v.verb);
+        if (!confirm(`“${v.verb}” silinsin mi?${n ? ` ${n} yerde kullanılıyor; orada sadece “${v.verb.replace(/m[ae]k$/, '')}” kökü aranır.` : ''}`)) return;
+        data.verbs.splice(+row.dataset.v, 1); renderVerbs(); setDirty(); refreshLists();
+      } else if (e.target.closest('[data-sdel]')) {
+        v.stems.splice(+e.target.closest('[data-sdel]').dataset.sdel, 1); renderVerbs(); setDirty();
+      }
+    });
+    $('#verbList').addEventListener('keydown', e => {
+      if (e.key !== 'Enter' || !e.target.closest('[data-sadd]')) return;
+      const i = +e.target.closest('[data-v]').dataset.v, v = data.verbs[i];
+      const s = lower(e.target.value).replace(/-$/, '');
+      if (!s) return;
+      if (!v.stems.includes(s)) v.stems.push(s);
+      renderVerbs(); setDirty();
+      $(`[data-v="${i}"] [data-sadd]`).focus();
+    });
+    $('#vTest').oninput = () => {
+      const q = $('#vTest').value.trim();
+      const hit = q ? data.verbs.filter(v => BOT.catches(q, '+' + v.verb, data)) : [];
+      $('#vRes').innerHTML = !q ? '' : hit.length ? `<span class="ok">✓ ${hit.map(v => esc(v.verb)).join(', ')}</span>` : '<span class="no">✗ Listedeki hiçbir fiil yakalamıyor. Fiili ya da kökünü ekle.</span>';
+      renderVerbs();
+    };
+
+    /* ---------- Dışa / içe aktar (biçim: docs/BOT-KURALLARI.md) ---------- */
+    const cleanData = () => ({
+      rules: data.rules.map(r => ({ id: r.id, name: r.name || '', category: r.category || '', when: r.when.filter(Boolean), reply: r.reply.filter(Boolean), traits: r.traits, chars: r.chars, note: r.note || '' })),
+      addons: data.addons.map(a => ({ id: a.id, name: a.name || '', category: a.category || '', when: a.when.filter(Boolean), add: a.add.filter(Boolean), mode: okMode(a.mode), chance: Math.max(0, Math.min(100, +a.chance)), traits: a.traits, chars: a.chars, note: a.note || '' })),
+      groups: data.groups.filter(g => g.name).map(g => ({ name: g.name, words: g.words.filter(Boolean) })),
+      verbs: data.verbs.filter(v => v.verb).map(v => ({ verb: v.verb, stems: v.stems.filter(Boolean) }))
+    });
+
+    $('#exportBtn').onclick = () => {
+      const out = Object.assign({ format: 'amor-stories-bot', version: 1 }, cleanData());
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }));
+      a.download = `bot-kurallari-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      $('#status').textContent = '⬇️ dışa aktarıldı';
+    };
+
+    // Dosyayı okuyup doğrular; kabul edilenler: { format, rules, groups, verbs }, { rules, ... } ya da sadece kural dizisi
+    const arr = v => (Array.isArray(v) ? v : typeof v === 'string' && v ? [v] : []);
+    function parseImport(text) {
+      let d = JSON.parse(text);
+      if (Array.isArray(d)) d = { rules: d };
+      if (!d || typeof d !== 'object' || !['rules', 'addons', 'groups', 'verbs'].some(k => Array.isArray(d[k]))) throw new Error('Dosyada "rules", "addons", "groups" ya da "verbs" listesi yok.');
+      const warns = [];
+      const rules = arr(d.rules).filter(r => r && typeof r === 'object').map((r, i) => {
+        const x = { id: r.id ? String(r.id) : uid(), name: String(r.name || ''), category: String(r.category || ''), when: arr(r.when).map(String), reply: arr(r.reply).map(String), traits: arr(r.traits).map(String), chars: arr(r.chars).map(String), note: String(r.note || '') };
+        if (!x.reply.length) warns.push(`“${x.name || x.when.join(' → ') || '#' + (i + 1)}” kuralında cevap yok (kullanılmaz)`);
+        return x;
+      });
+      const addons = arr(d.addons).filter(a => a && typeof a === 'object').map((a, i) => {
+        const x = { id: a.id ? String(a.id) : uid(), name: String(a.name || ''), category: String(a.category || ''), when: arr(a.when).map(String), add: arr(a.add).map(String), mode: okMode(a.mode), chance: a.chance == null ? 100 : Math.max(0, Math.min(100, +a.chance || 0)), traits: arr(a.traits).map(String), chars: arr(a.chars).map(String), note: String(a.note || '') };
+        if (!x.add.length) warns.push(`“${x.name || x.when.join(' → ') || 'ek #' + (i + 1)}” ekinde eklenecek metin yok (kullanılmaz)`);
+        return x;
+      });
+      const groups = arr(d.groups).filter(g => g && g.name).map(g => ({ name: String(g.name).replace(/^@/, ''), words: arr(g.words).map(String) }));
+      const verbs = arr(d.verbs).filter(v => v && v.verb).map(v => ({ verb: lower(v.verb), stems: arr(v.stems).map(s => lower(s)) }));
+      // Tanımsız grup kullanan kurallar
+      const known = new Set(data.groups.concat(groups).map(g => lower(g.name)));
+      const missing = new Set();
+      rules.concat(addons).forEach(r => r.when.forEach(t => t.split('|').forEach(p => { if (p[0] === '@' && !known.has(lower(p.slice(1)))) missing.add(p); })));
+      if (missing.size) warns.push(`Tanımsız gruplar: ${[...missing].join(', ')}`);
+      return { rules, addons, groups, verbs, warns };
+    }
+
+    let pending = null;
+    $('#importBtn').onclick = () => $('#importFile').click();
+    $('#importFile').onchange = async e => {
+      const f = e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      try { pending = parseImport(await f.text()); }
+      catch (err) { alert('Bu dosya okunamadı: ' + (err.message || 'geçersiz JSON')); return; }
+      const sameIds = pending.rules.filter(r => data.rules.some(x => x.id === r.id)).length + pending.addons.filter(a => data.addons.some(x => x.id === a.id)).length;
+      $('#importInfo').innerHTML = `<b>${esc(f.name)}</b><br>
+        ${pending.rules.length} kural · ${pending.addons.length} otomatik ek · ${pending.groups.length} kelime grubu · ${pending.verbs.length} fiil
+        ${sameIds ? `<br><small>${sameIds} kayıt editördekilerle aynı kimlikte (birleştirince güncellenir)</small>` : ''}
+        ${pending.warns.map(w => `<div class="warnl">⚠️ ${esc(w)}</div>`).join('')}`;
+      $('#importModal').hidden = false;
+    };
+    $('#importModal').onclick = e => {
+      const b = e.target.closest('[data-imp]');
+      if (!b && e.target.id !== 'importModal') return;
+      const mode = b ? b.dataset.imp : 'cancel';
+      $('#importModal').hidden = true;
+      if (mode === 'cancel' || !pending) { pending = null; return; }
+      const p = pending;
+      pending = null;
+      if (mode === 'replace') {
+        data = { rules: p.rules, addons: p.addons, groups: p.groups, verbs: p.verbs };
+      } else {
+        const put = (list, x) => { const i = list.findIndex(y => y.id === x.id); if (i >= 0) list[i] = x; else list.push(x); };
+        p.rules.forEach(r => put(data.rules, r));
+        p.addons.forEach(a => put(data.addons, a));
+        p.groups.forEach(g => {
+          const old = groupByName(g.name);
+          if (old) g.words.forEach(w => { if (!old.words.includes(w)) old.words.push(w); }); else data.groups.push(g);
+        });
+        p.verbs.forEach(v => {
+          const old = verbByName(v.verb);
+          if (old) v.stems.forEach(s => { if (!old.stems.includes(s)) old.stems.push(s); }); else data.verbs.push(v);
+        });
+      }
+      ui.selBy = {};
+      ui.sel = (coll()[0] || {}).id || null;
+      ui.q = ''; $('#q').value = '';
+      refreshLists(); renderRules(); renderGroups(); renderVerbs(); setDirty(); runTest();
+      $('#status').textContent = `⬆️ ${mode === 'replace' ? 'değiştirildi' : 'birleştirildi'} · Kaydet'e bas`;
+    };
+
+    /* ---------- Kaydet ---------- */
+    async function save() {
+      const json = JSON.stringify(cleanData(), null, 2);
+      if (!canSave) {
+        const content = `/* gracie-studyo.bat ile duzenlenir (tools/bot-editor.html). Bicim: js/bot.js'in basindaki aciklama. */\nwindow.Stories = window.Stories || {};\nStories.BOT_RULES = ${json};\n`;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([content], { type: 'text/javascript' }));
+        a.download = 'bot-rules.js';
+        a.click();
+        setDirty(false);
+        $('#status').textContent = '⬇️ indirildi';
+        return;
+      }
+      $('#status').textContent = 'kaydediliyor…';
+      try {
+        const r = await fetch('/api/bot-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: json });
+        const res = await r.json();
+        if (!res.ok) throw new Error(res.error);
+        setDirty(false);
+        $('#status').textContent = res.changed ? `✅ kaydedildi (${res.sw})` : '✅ değişiklik yok';
+      } catch (e) {
+        $('#status').textContent = '❌ kaydedilemedi';
+        alert('Kaydedilemedi: ' + (e.message || 'sunucu kapalı mı?'));
+      }
+    }
+    $('#save').onclick = save;
+    document.addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); save(); } });
+    window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+    load();
+  })();
+  </script>
+</body>
+</html>

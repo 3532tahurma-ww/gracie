@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gracie · Diyalog editörü</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f4fb; --card: #fff; --ink: #231f33; --mute: #7a7590; --line: #e6e2f0;
+    --accent: #7b5cff; --accent-soft: #efeaff; --warn: #e5484d; --warn-soft: #fff0f0; --ok: #1f9d6a; --mod: #f5a524;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 Nunito, system-ui, sans-serif; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  header { position: sticky; top: 0; z-index: 5; background: var(--card); border-bottom: 1px solid var(--line); }
+  .bar { display: flex; align-items: center; gap: 12px; padding: 10px 18px; }
+  .logo { font-weight: 800; font-size: 18px; }
+  .logo span { color: var(--accent); }
+  .logo small { color: var(--mute); font-weight: 700; font-size: 13px; margin-left: 6px; }
+  .grow { flex: 1; }
+  #dirty { color: var(--mute); font-size: 13px; }
+  #dirty.on { color: var(--mod); font-weight: 700; }
+  .btn { border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 7px 12px; font-weight: 700; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.pri { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.pri:disabled { opacity: .45; cursor: default; }
+  .btn.danger { color: var(--warn); }
+  .btn.sm { padding: 4px 9px; font-size: 12.5px; border-radius: 8px; }
+
+  .test { display: flex; gap: 8px; padding: 0 18px 10px; align-items: center; flex-wrap: wrap; }
+  .test input { flex: 1; min-width: 260px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; background: var(--bg); }
+  .test select { border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--card); }
+  #tOut { padding: 0 18px 12px; }
+  #tOut:empty { display: none; }
+  .res { background: var(--accent-soft); border-radius: 12px; padding: 10px 14px; }
+  .res .top { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+  .res .top b { font-size: 16px; }
+  .res .ways { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-top: 8px; }
+  .res .way { background: var(--card); border-radius: 10px; padding: 7px 10px; }
+  .res .way small { color: var(--mute); display: block; }
+
+  .wrap { display: grid; grid-template-columns: 290px 1fr; gap: 16px; padding: 16px 18px 60px; align-items: start; }
+  aside { position: sticky; top: 132px; max-height: calc(100vh - 150px); overflow: auto; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px; }
+  aside input { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; margin-bottom: 8px; }
+  aside h4 { margin: 12px 6px 4px; color: var(--mute); font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; }
+  aside h4.sec { display: flex; align-items: center; justify-content: space-between; margin: 16px 2px 6px; padding: 6px 6px 4px; border-top: 2px solid var(--line);
+    color: var(--ink); font-size: 13px; letter-spacing: .02em; }
+  aside h4.sec:first-of-type { border-top: 0; margin-top: 4px; }
+  aside h4.sec .btn { text-transform: none; letter-spacing: 0; }
+  .it { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: 0; border-radius: 9px; padding: 6px 8px; }
+  .it:hover { background: var(--bg); }
+  .it.on { background: var(--accent-soft); font-weight: 800; }
+  .it .n { width: 20px; color: var(--mute); font-size: 11.5px; text-align: right; }
+  .it .lb { flex: 1; }
+  .it small { color: var(--mute); }
+  .new { background: var(--accent); color: #fff; font-size: 10.5px; border-radius: 6px; padding: 0 5px; font-weight: 800; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--mod); }
+
+  main { min-width: 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; }
+  .card h3 { margin: 0 0 10px; font-size: 15px; }
+  .head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .head h2 { margin: 0; font-size: 21px; }
+  .head code { color: var(--mute); background: var(--bg); border-radius: 6px; padding: 1px 6px; }
+  .head input { border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; }
+  .desc { color: var(--mute); margin: 6px 0 0; }
+  .hint { color: var(--mute); font-size: 12.5px; margin: 8px 0 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--bg); border: 1px solid var(--line); border-radius: 20px; padding: 3px 4px 3px 10px; }
+  .chip.warn { background: var(--warn-soft); border-color: #f3b4b6; }
+  .chip.warn::before { content: '⚠'; color: var(--warn); font-size: 12px; }
+  .chip.weak { border-style: dashed; font-style: italic; color: var(--mute); }
+  .chip.sel { outline: 2px solid var(--accent); background: var(--accent-soft); }
+  .chip small { color: var(--mute); margin-left: 1px; }
+  .chip .wl { font-size: 11px; font-weight: 700; color: var(--accent); }
+  [data-w] { cursor: pointer; }
+  .wlink { color: var(--accent); cursor: pointer; font-weight: 700; }
+  svg.flow { width: 100%; height: auto; display: block; font: 12.5px Nunito, system-ui, sans-serif; }
+  svg.flow .e { fill: none; stroke: #cfc8e6; stroke-width: 1.4; }
+  svg.flow .e.weak { stroke-dasharray: 4 4; }
+  svg.flow .e.wl { stroke: var(--accent); stroke-dasharray: 5 4; stroke-width: 1.6; }
+  svg.flow .e.off { stroke: #ece9f3; }
+  svg.flow .n { cursor: pointer; }
+  svg.flow .n rect { fill: var(--card); stroke: var(--line); }
+  svg.flow .n:hover rect { stroke: var(--accent); }
+  svg.flow .n text { fill: var(--ink); }
+  svg.flow .n .s, svg.flow tspan.s { fill: var(--mute); font-size: 11px; }
+  svg.flow .n .b { font-weight: 800; }
+  svg.flow .w.weak rect { stroke-dasharray: 4 3; }
+  svg.flow .w.weak text { fill: var(--mute); font-style: italic; }
+  svg.flow .w.sel rect, svg.flow .p.word rect { fill: var(--accent-soft); stroke: var(--accent); }
+  svg.flow .t { cursor: default; }
+  svg.flow .t rect { fill: var(--accent); stroke: var(--accent); }
+  svg.flow .t text { fill: #fff; }
+  svg.flow .t .s { fill: #e6defc; }
+  svg.flow .off rect { fill: var(--bg); stroke-dasharray: 3 3; }
+  svg.flow .off text { fill: var(--mute); }
+  .flowchart { display: flex; flex-direction: column; gap: 0; align-items: stretch; }
+  .flowchart .st2 { border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; background: var(--card); }
+  .flowchart .st2 b { color: var(--accent); }
+  .flowchart .ar { text-align: center; color: var(--mute); font-size: 13px; line-height: 1.6; }
+  .flowchart .yes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sim { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .sim td, .sim th { border-bottom: 1px solid var(--line); padding: 6px 8px; vertical-align: top; text-align: left; }
+  .sim th { color: var(--mute); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; }
+  .tag { display: inline-block; border-radius: 6px; padding: 0 6px; font-size: 11.5px; font-weight: 800; background: var(--bg); }
+  .tag.word { background: var(--accent); color: #fff; } .tag.cont { background: #ffe9c2; } .tag.tone { background: var(--accent-soft); }
+  .tag.love { background: #ffe0ef; } .tag.meh { background: #e8e8ee; } .tag.none { color: var(--mute); }
+  .chip button { border: 0; background: none; color: var(--mute); width: 20px; height: 20px; border-radius: 50%; line-height: 1; }
+  .chip button:hover { background: var(--line); color: var(--warn); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row input[type=text] { flex: 1; min-width: 200px; border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; }
+  .row select { border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; max-width: 100%; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .eff { display: grid; grid-template-columns: 130px 1fr 52px; gap: 6px 10px; align-items: center; }
+  .eff output { text-align: right; font-weight: 700; }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .tab { border: 1px solid var(--line); background: var(--card); border-radius: 20px; padding: 5px 12px; font-weight: 700; position: relative; }
+  .tab.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tab .dot { position: absolute; top: -2px; right: -2px; }
+  .path { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; }
+  .path.mod { border-color: var(--mod); }
+  .ph { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin-bottom: 6px; }
+  .ph small { color: var(--mute); }
+  .st { font-size: 12px; font-weight: 700; color: var(--mute); }
+  .st.mod { color: var(--mod); }
+  .st.empty { color: var(--warn); }
+  .acts { margin-left: auto; display: flex; gap: 6px; }
+  .acts a { color: var(--accent); cursor: pointer; font-size: 12.5px; font-weight: 700; }
+  .acts a[hidden] { display: none; }
+  textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; resize: vertical; min-height: 64px; background: var(--bg); line-height: 1.6; }
+  textarea:focus, input:focus, select:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+  .bubbles { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 6px; }
+  .bubbles:empty { display: none; }
+  .bub { background: var(--accent-soft); border-radius: 14px 14px 14px 4px; padding: 5px 11px; max-width: 80%; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; color: var(--accent); font-weight: 700; font-size: 13px; }
+  .legend { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; font-size: 12.5px; margin-top: 6px; }
+  .legend code { background: var(--bg); border-radius: 5px; padding: 0 5px; }
+  #toast { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 9px 16px; border-radius: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; }
+  #toast.on { opacity: 1; }
+  .fatal { max-width: 560px; margin: 60px auto; background: var(--card); border-radius: 14px; padding: 20px 24px; border: 1px solid var(--line); }
+  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } aside { position: static; max-height: 300px; } .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<a href="studio.html" style="display:inline-block;margin:8px 0 0 14px;font:600 13px system-ui,sans-serif;color:#0089c4;text-decoration:none">← Gracie Stüdyo</a>
+<header>
+  <div class="bar">
+    <div class="logo">gr<span>a</span>cie <small>Diyalog editörü</small></div>
+    <div class="grow"></div>
+    <span id="dirty">Değişiklik yok</span>
+    <button class="btn pri" id="save" disabled>Kaydet</button>
+  </div>
+  <div class="test">
+    <input id="tIn" placeholder="Test: bir mesaj yaz, hangi niyete düştüğünü ve cevap yollarını gör…" autocomplete="off">
+    <select id="tArch" title="Cevapları hangi kişilikle göstereyim?"></select>
+  </div>
+  <div id="tOut"></div>
+</header>
+
+<div class="wrap">
+  <aside id="side"></aside>
+  <main id="main"></main>
+</div>
+<div id="toast"></div>
+
+<script>window.Amor = { Store: { state: { recent: {} }, save() {} } }; // motorun cümle seçimi için sahte kayıt</script>
+<script src="../js/amor/data/intents.js"></script>
+<script src="../js/amor/data/archetypes.js"></script>
+<script src="../js/amor/nlu.js"></script>
+<script src="../js/amor/engine.js"></script>
+<script src="../js/amor/kume.js"></script>
+<script src="kume-lab.js"></script>
+<script>
+(() => {
+  const A = Amor, E = Amor.Engine;
+  const $ = s => document.querySelector(s);
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const same = (x, y) => JSON.stringify(x) === JSON.stringify(y);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const pickRaw = arr => arr[Math.floor(Math.random() * arr.length)];
+
+  /* Değiştirilmemiş hali (karşılaştırma ve "varsayılana dön" için) */
+  const P = {
+    intents: clone(A.INTENTS), effects: clone(A.INTENT_EFFECTS), arch: clone(A.ARCHETYPES)
+  };
+  const BUILTIN = P.intents.map(r => r[0]);
+
+  const LABELS = {
+    insult: 'Hakaret', night: 'İyi geceler', morning: 'Günaydın', bye: 'Vedalaşma', kiss: 'Öpücük', hug: 'Sarılma', flirt: 'Flört',
+    miss: 'Özlem', ask_age: 'Yaş sorusu', ask_memory: 'Beni hatırlıyor musun', ask_name: 'İsim sorusu', ask_city: 'Şehir sorusu',
+    ask_job: 'Meslek sorusu', ask_hobby: 'Hobi sorusu', how_are_you: 'Nasılsın', wyd: 'Ne yapıyorsun', meet: 'Buluşma / iletişim',
+    photo: 'Fotoğraf isteği', compliment: 'İltifat', answer_bad: 'Kötüyüm', sorry: 'Özür', thanks: 'Teşekkür', laugh: 'Gülme',
+    greet: 'Selamlaşma', answer_good: 'İyiyim', agree: 'Onaylama', disagree: 'Reddetme',
+    question: 'Soru', fallback: 'Anlaşılmayan mesaj', tell_name: 'Adını söyleme', opener: 'Karakterin ilk mesajı', any: 'Genel ruh hali cümleleri'
+  };
+  const SPECIAL = {
+    question: 'Hiçbir kelime tutmazsa ama mesaj "?" ile bitiyor ya da "mı/mi" içeriyorsa.',
+    fallback: 'Hiçbir kelime tutmazsa. Diğer yolların boş kalınca düştüğü yer de burası.',
+    tell_name: 'Kullanıcı "adım Deniz", "bana Can de" gibi adını söyleyince. {name} = söylenen ad.',
+    opener: 'Karakter sohbeti kendisi başlatınca. Ruh hali yolu yoktur.',
+    any: 'Gergin / üzgün / yorgunken, niyete özel cümle yoksa kullanılır.'
+  };
+  const NOTES = {
+    ask_memory: 'Bu niyetin cevabı karakterin hafızasından (adın, şehrin, anlattıkların) otomatik kurulur; cümle yolları kullanılmaz.'
+  };
+  const PATHS = [
+    { id: 'normal', name: 'Normal', key: i => i, hint: 'iyi ya da sakin ruh halinde' },
+    { id: 'close', name: 'Yakın (Lv.3+)', key: i => i + '_close', hint: 'yakınlık Lv.3 ve üstünde, %75 olasılıkla (flört, öpücük, sarılma, buluşmada her zaman)' },
+    { id: 'neg', name: 'Gergin', key: i => 'neg:' + i, hint: 'karakter gerginken' },
+    { id: 'sad', name: 'Üzgün', key: i => 'sad:' + i, hint: 'karakter üzgünken' },
+    { id: 'low', name: 'Yorgun', key: i => 'low:' + i, hint: 'karakter yorgunken' }
+  ];
+  const MOOD_NAME = { neg: 'gergin', sad: 'üzgün', low: 'yorgun' };
+  const KEEP = ['fallback', 'greet', 'opener'];
+
+  const pctTxt = v => '%' + Math.round(v * 100);
+
+  let D = { intents: {}, lines: {} };
+  let saved = JSON.stringify(D);
+  let cur = 'greet';
+  let arch = P.arch[0].id;
+
+  /* ---------- Model ---------- */
+  function apply() {
+    A.INTENTS = clone(P.intents);
+    A.INTENT_EFFECTS = clone(P.effects);
+    A.ARCHETYPES = clone(P.arch);
+    E.applyDialog(D);
+  }
+  const order = () => A.INTENTS.map(r => r[0]);
+  const tid = id => id.slice(6);
+  const isSpecial = id => id in SPECIAL;
+  // kelimesi olmayan sayfalar: konu ayarları, huylar, Küme senaryoları (sc:), kişilik havuzları (per:), Reddetme / Sevdiği kümeleri
+  const TALK_OWN = { refuse: '✖ Sevmediğini reddetme', love: '💜 Sevdiği küme' };
+  const isPage = id => id === 'kume' || id in TALK_OWN || /^(sc|per):/.test(id);
+  const isCustom = id => !BUILTIN.includes(id) && !isSpecial(id) && !isPage(id);
+  const label = id => id === 'kume' ? 'Küme sistemi (durum + kişilik)'
+    : id in TALK_OWN ? TALK_OWN[id]
+    : id.startsWith('sc:') ? (s => s ? (s.live ? '▶ ' : '') + s.name : id)(KumeLab.scenarios().find(s => s.id === id.slice(3)))
+    : id.startsWith('per:') ? (a => a ? `${a.icon} ${a.label}` : id)(A.ARCHETYPES.find(a => a.id === id.slice(4)))
+    : (D.intents[id] && D.intents[id].label) || LABELS[id] || id;
+  const wordsOf = id => (A.INTENTS.find(r => r[0] === id) || [null, []])[1];
+  const origWords = id => (P.intents.find(r => r[0] === id) || [null, null])[1];
+  const keyIntent = k => k.replace(/^(neg|sad|low):/, '').replace(/_close$/, '');
+  const archOf = (src, aid) => src.find(a => a.id === aid);
+  function poolIn(src, aid, key) {
+    const a = archOf(src, aid);
+    const m = key.match(/^(neg|sad|low):(.+)$/);
+    return (m ? (a.mood[m[1]] || {})[m[2]] : a.lines[key]) || [];
+  }
+  const poolCur = (aid, key) => (D.lines[aid] && D.lines[aid][key]) || poolIn(A.ARCHETYPES, aid, key);
+  const poolOrig = (aid, key) => poolIn(P.arch, aid, key);
+  const isModKey = (aid, key) => !!(D.lines[aid] && key in D.lines[aid]);
+
+  function pathsFor(id) {
+    if (NOTES[id]) return [];
+    if (id === 'any') return PATHS.slice(2);
+    if (id === 'opener') return PATHS.slice(0, 2);
+    return PATHS;
+  }
+  function intentModified(id) {
+    if (D.intents[id] && (isCustom(id) || Object.keys(D.intents[id]).length)) return true;
+    return Object.values(D.lines).some(p => Object.keys(p).some(k => keyIntent(k) === id));
+  }
+  function archModified(aid, id) {
+    return Object.keys(D.lines[aid] || {}).some(k => keyIntent(k) === id);
+  }
+
+  function def(id) { return D.intents[id] = D.intents[id] || {}; }
+  function tidy(id) {
+    if (!isCustom(id) && D.intents[id] && !Object.keys(D.intents[id]).length) delete D.intents[id];
+  }
+  function setWords(id, words) {
+    const d = def(id);
+    if (!isCustom(id) && same(words, origWords(id))) delete d.words; else d.words = words;
+    tidy(id);
+  }
+  function setPool(aid, key, list) {
+    D.lines[aid] = D.lines[aid] || {};
+    if (same(list, poolOrig(aid, key))) delete D.lines[aid][key]; else D.lines[aid][key] = list;
+    if (!Object.keys(D.lines[aid]).length) delete D.lines[aid];
+  }
+
+  /* Konu düzenleme: değişen konu bütünüyle custom-dialog.js'e yazılır, varsayılanla aynıysa silinir */
+  const bareW = w => w.replace(/^~/, '').replace(/^\^/, '');
+  const splitWords = s => s.split(/[,\n]/).map(x => x.trim().replace(/\s+/g, ' ')).filter(Boolean);
+  const splitLines = s => s.split('\n').map(x => x.trim()).filter(Boolean);
+
+  /* Boş yol nereye düşer (engine.js'teki sırayla aynı) */
+  function resolve(aid, id, p) {
+    const own = poolCur(aid, p.key(id));
+    if (own.length) return { pool: own, via: null };
+    const a = archOf(A.ARCHETYPES, aid);
+    if (p.id === 'normal') return { pool: a.lines.fallback, via: 'Anlaşılmayan mesaj cümleleri' };
+    if (p.id === 'close') return { pool: resolve(aid, id, PATHS[0]).pool, via: 'Normal yol' };
+    if (id === 'insult' && a.lines.insult) return { pool: a.lines.insult, via: 'Normal hakaret cümleleri' };
+    const any = (a.mood[p.id] || {}).any;
+    if (any && any.length && id !== 'any') return { pool: any, via: `genel ${MOOD_NAME[p.id]} cümleleri` };
+    return { pool: [], via: 'uygulamanın ortak kısa cümleleri (hmm, tamam…)' };
+  }
+
+  /* Örnek değerlerle doldur (sadece önizleme) */
+  function demo(aid, s, x = 'Tarkan') {
+    const a = archOf(A.ARCHETYPES, aid);
+    const likes = [...(a.likes || [])].sort(() => Math.random() - 0.5);
+    const hit = (a.hitap || []).flat();
+    const laugh = { ahah: 'ahahah', keysmash: 'ASDJSKFH', hihi: 'hihi', hh: 'hh' }[a.style.laugh] || '😊';
+    return s.replace(/\{h\}/g, () => hit.length && Math.random() < 0.6 ? ' ' + pickRaw(hit) : '')
+      .replace(/\{name\}/g, 'Deniz').replace(/\{self\}/g, 'Ece').replace(/\{age\}/g, '24')
+      .replace(/\{city_at\}/g, "İzmir'deyim").replace(/\{city\}/g, 'İzmir').replace(/\{district\}/g, 'Karşıyaka')
+      .replace(/\{fav\}/g, 'Kordon').replace(/\{job_is\}/g, 'mimarım').replace(/\{doing\}/g, 'çizim yapıyorum')
+      .replace(/\{like\}/g, likes[0] || 'kahve').replace(/\{like2\}/g, likes[1] || 'müzik').replace(/\{laugh\}/g, laugh)
+      .replace(/\{x\} m[ıi](?=[\s?!.,]|$)/g, () => `${x} ${soru(x)}`)
+      .replace(/\{x\}/g, x).replace(/\{cause\}/g, 'işteki bir mesele').replace(/\{gift\}/g, 'gül')
+      .replace(/\s+([,.!?])/g, '$1').replace(/\s{2,}/g, ' ').trim();
+  }
+  // Soru eki (memory.js'teki ile aynı): Ankara -> mı, kedi -> mi, maç -> mı
+  const soru = w => ({ a: 'mı', ı: 'mı', e: 'mi', i: 'mi', o: 'mu', u: 'mu', ö: 'mü', ü: 'mü' }[(String(w).toLocaleLowerCase('tr').match(/[aeıioöuü]/g) || ['e']).pop()]);
+  const bubbles = (aid, line, x) => line ? demo(aid, line, x).split('|').filter(Boolean).map(b => `<div class="bub">${esc(b)}</div>`).join('') : '';
+
+  /* ---------- Kayıt durumu ---------- */
+  function changed(full = true) {
+    apply();
+    const dirty = JSON.stringify(D) !== saved;
+    $('#dirty').textContent = dirty ? '● Kaydedilmemiş değişiklik var' : 'Değişiklik yok';
+    $('#dirty').classList.toggle('on', dirty);
+    $('#save').disabled = !dirty;
+    renderSide();
+    if (full) renderMain(); else refreshStatus();
+    runTest();
+  }
+
+  async function save() {
+    const body = JSON.stringify(D, null, 1);
+    try {
+      const r = await fetch('/api/dialog', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || 'kaydedilemedi');
+      saved = JSON.stringify(D);
+      changed(false);
+      toast(j.changed ? `Kaydedildi (${j.sw}). Telefonda görmek için commit + push.` : 'Zaten kayıtlı.');
+    } catch (e) {
+      toast('Kaydedilemedi: ' + e.message + ' (sunucu penceresi açık mı?)');
+    }
+  }
+
+  let toastT;
+  function toast(msg) {
+    const t = $('#toast');
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 3800);
+  }
+
+  /* ---------- Kenar listesi ---------- */
+  const side = $('#side');
+  let search = '';
+  function renderSide() {
+    const q = search.toLocaleLowerCase('tr').trim();
+    const fq = E.norm(q);
+    const show = id => !q || label(id).toLocaleLowerCase('tr').includes(q) || id.includes(q) ||
+      (!isSpecial(id) && !isPage(id) && wordsOf(id).some(w => E.norm(w).includes(fq)));
+    const isNew = id => isCustom(id);
+    const item = (id, n) => `<button class="it ${id === cur ? 'on' : ''}" data-id="${esc(id)}">
+        <span class="n">${n || ''}</span><span class="lb">${esc(label(id))}</span>
+        ${isNew(id) ? '<b class="new">yeni</b>' : ''}${intentModified(id) ? '<i class="dot" title="değiştirildi"></i>' : ''}
+        ${isSpecial(id) || isPage(id) ? '' : `<small>${wordsOf(id).length}</small>`}</button>`;
+    const keep = document.activeElement && document.activeElement.id === 'sq';
+    const sec = (title, btn) => `<h4 class="sec">${title}${btn || ''}</h4>`;
+    side.innerHTML = `<input id="sq" placeholder="Ara (isim ya da kelime)…" value="${esc(search)}">
+      ${sec('Senaryolar', '<button class="btn sm" id="newScenario">+ yeni</button>')}
+      ${KumeLab.scenarios().map(s => 'sc:' + s.id).filter(show).map(id => item(id)).join('')}
+      ${sec('Konuşma kümeleri', `<button class="btn sm" id="newIntent">+ yeni</button><button class="btn sm" id="impTalk" title="JSON dosyasından konuşma kümesi ekle / güncelle">⬆ JSON</button>
+        <button class="btn sm" id="expTalkAll" title="Bütün konuşma kümelerini tek JSON dosyasında indir">⬇ hepsi</button><input type="file" id="impTalkF" accept=".json,application/json" hidden>`)}
+      <h4>Anahtar kelimeli · öncelik sırası</h4>
+      ${order().map((id, i) => show(id) ? item(id, i + 1) : '').join('')}
+      <h4>Özel durumlar</h4>
+      ${Object.keys(SPECIAL).filter(show).map(id => item(id)).join('')}
+      <h4>Kişilik kümeleri</h4>
+      ${Object.keys(TALK_OWN).filter(show).map(id => item(id)).join('')}
+      ${sec('Kişilik havuzları')}
+      ${A.ARCHETYPES.map(a => 'per:' + a.id).filter(show).map(id => item(id)).join('')}`;
+    if (keep) { const s = $('#sq'); s.focus(); s.setSelectionRange(s.value.length, s.value.length); }
+  }
+  side.addEventListener('change', e => {
+    const t = e.target;
+    if (t.id !== 'impTalkF' || !t.files[0]) return;
+    t.files[0].text().then(txt => {
+      try { const n = importTalk(txt); toast(`${n} konuşma kümesi içe aktarıldı. Kaydet'e basmayı unutma.`); }
+      catch (err) { alert('İçe aktarılamadı: ' + err.message); }
+    });
+  });
+  side.addEventListener('input', e => { if (e.target.id === 'sq') { search = e.target.value; renderSide(); } });
+  side.addEventListener('click', e => {
+    if (e.target.closest('#newIntent')) return newIntent();
+    if (e.target.closest('#impTalk')) return $('#impTalkF').click();
+    if (e.target.closest('#expTalkAll')) return download('konusma-kumeleri', talkFile([...order(), ...Object.keys(SPECIAL), ...Object.keys(TALK_OWN)]));
+    if (e.target.closest('#newScenario')) { cur = 'sc:' + KumeLab.addScenario(); renderSide(); renderMain(); window.scrollTo({ top: 0 }); return; }
+    const b = e.target.closest('.it');
+    if (b) { cur = b.dataset.id; renderSide(); renderMain(); window.scrollTo({ top: 0 }); }
+  });
+
+  function newIntent() {
+    const name = prompt('Yeni niyetin adı (ör. "Müzik sorusu"):');
+    if (!name || !name.trim()) return;
+    const fold = { ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u', â: 'a', î: 'i', û: 'u' };
+    let id = 'x_' + name.toLocaleLowerCase('tr').replace(/[çğıöşüâîû]/g, c => fold[c]).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').replace(/_close$/, '_');
+    if (id === 'x_') id = 'x_niyet';
+    let n = id, k = 2;
+    while (order().includes(n) || isSpecial(n)) n = id + '_' + k++;
+    D.intents[n] = { label: name.trim(), words: [], before: 'how_are_you' };
+    cur = n;
+    changed();
+    setTimeout(() => { const w = $('#wIn'); if (w) w.focus(); }, 0);
+  }
+
+  /* ---------- Konuşma kümesi JSON ----------
+   * { format: "amor-konusma", version: 1, clusters: [ { id, name, words, before, effect, lines: { arketip | "*": { normal, close, neg, sad, low } }, function: { outs, ins } } ] } */
+  const pathOf = (id, pid) => pathsFor(id).find(p => p.id === pid);
+  function talkOf(id) {
+    const c = { id, name: label(id) }, cfgK = KumeLab.cfg();
+    if (!isSpecial(id) && !(id in TALK_OWN)) {
+      c.words = [...wordsOf(id)];
+      if (D.intents[id] && D.intents[id].before) c.before = D.intents[id].before;
+      c.effect = effOf(id);
+    }
+    c.lines = {};
+    P.arch.forEach(a => {
+      const o = {};
+      if (id in TALK_OWN) { const L = ((cfgK.talk[id] || {})[a.id]) || []; if (L.length) o.normal = [...L]; }
+      else pathsFor(id).forEach(p => { const L = poolCur(a.id, p.key(id)); if (L.length) o[p.id] = [...L]; });
+      if (Object.keys(o).length) c.lines[a.id] = o;
+    });
+    const f = cfgK.talkMap[id];
+    if (f && (f.outs.length || f.ins.length)) c.function = clone(f);
+    return c;
+  }
+  const talkFile = ids => JSON.stringify({ format: 'amor-konusma', version: 1, clusters: ids.map(talkOf) }, null, 2);
+  function download(name, body) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([body], { type: 'application/json' }));
+    a.download = (name.toLocaleLowerCase('tr').replace(/[^a-z0-9çğıöşü]+/g, '-').replace(/^-|-$/g, '') || 'konusma') + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  // Var olan kümeyi (id'si tutan) günceller, yoksa yeni küme açar. Sadece dosyada olan alanlar değişir.
+  function importTalk(text) {
+    const j = JSON.parse(text);
+    const list = Array.isArray(j.clusters) ? j.clusters : Array.isArray(j) ? j : [j.cluster || j];
+    const cfgK = KumeLab.cfg();
+    let last = null;
+    list.forEach((c, i) => {
+      if (!c || typeof c !== 'object') throw new Error(`${i + 1}. küme geçersiz`);
+      let id = c.id && (order().includes(c.id) || isSpecial(c.id) || c.id in TALK_OWN) ? c.id : null;
+      if (!id) {
+        const name = String(c.name || c.id || '').trim();
+        if (!name) throw new Error(`${i + 1}. kümenin adı (name) yok`);
+        const fold = { ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u', â: 'a', î: 'i', û: 'u' };
+        const base = /^x_[a-z0-9_]+$/.test(c.id || '') ? c.id
+          : 'x_' + (name.toLocaleLowerCase('tr').replace(/[çğıöşüâîû]/g, ch => fold[ch]).replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').replace(/_close$/, '_') || 'niyet');
+        let n = base, k = 2;
+        while (order().includes(n) || isSpecial(n)) n = base + '_' + k++;
+        D.intents[n] = { label: name, words: [], before: 'how_are_you' };
+        apply();
+        id = n;
+      }
+      const own = id in TALK_OWN, kwd = !isSpecial(id) && !own;
+      if (isCustom(id) && c.name) D.intents[id].label = String(c.name);
+      if (kwd && Array.isArray(c.words)) setWords(id, c.words.map(String).map(w => w.trim()).filter(Boolean));
+      if (kwd && c.before !== undefined) {
+        if (c.before && order().includes(c.before) && c.before !== id) def(id).before = String(c.before);
+        else if (isCustom(id)) def(id).before = ''; else delete def(id).before;
+        tidy(id);
+      }
+      if (kwd && c.effect && typeof c.effect === 'object') {
+        const num = (v, lo, hi, d) => Number.isFinite(+v) ? Math.max(lo, Math.min(hi, +v)) : d;
+        def(id).effect = { valence: num(c.effect.valence, -0.4, 0.4, 0), arousal: num(c.effect.arousal, -0.3, 0.3, 0), aff: Math.round(num(c.effect.aff, -10, 10, 1)) };
+      }
+      if (c.lines && typeof c.lines === 'object') {
+        const entries = Object.entries(c.lines);
+        const all = entries.filter(([a]) => a === '*'), one = entries.filter(([a]) => a !== '*');
+        [...all.flatMap(([, v]) => P.arch.map(a => [a.id, v])), ...one].forEach(([aid, v]) => {
+          if (!P.arch.some(a => a.id === aid)) return;
+          const byPath = Array.isArray(v) ? { normal: v } : v && typeof v === 'object' ? v : {};
+          Object.entries(byPath).forEach(([pid, L]) => {
+            if (!Array.isArray(L)) return;
+            L = L.map(String).map(s => s.trim()).filter(Boolean);
+            if (own) { if (pid === 'normal') (cfgK.talk[id] = cfgK.talk[id] || {})[aid] = L; return; }
+            const p = pathOf(id, pid);
+            if (p) setPool(aid, p.key(id), L);
+          });
+        });
+      }
+      const fn = c.function || c.fn;
+      if (fn) { const f = KumeLab.cleanFn(fn); if (!f) throw new Error(`«${c.name || id}» fonksiyonu geçersiz (outs / ins listesi yok)`); cfgK.talkMap[id] = f; }
+      last = id;
+    });
+    KumeLab.store();
+    if (last) cur = last;
+    changed();
+    return list.length;
+  }
+
+  /* ---------- Ana panel ---------- */
+  const main = $('#main');
+  function renderMain() {
+    const id = cur;
+    if (id === 'kume' || id === 'traits' || id === 'tones' || id.startsWith('topic:')) { cur = 'sc:' + KumeLab.activeScenario(); return renderMain(); }
+    if (id.startsWith('sc:')) return KumeLab.page(main, kctx(), { mode: 'scenario', id: id.slice(3) });
+    if (id.startsWith('per:')) return KumeLab.page(main, kctx(), { mode: 'persona', id: id.slice(4) });
+    if (id in TALK_OWN) return KumeLab.page(main, kctx(), { mode: 'fn', id, full: true });
+    if (!isSpecial(id) && !order().includes(id)) { cur = 'greet'; return renderMain(); }
+    const d = D.intents[id] || {};
+    let h = `<div class="card"><div class="head">
+        ${isCustom(id) ? `<input id="lblIn" value="${esc(label(id))}" title="Niyetin adı (sadece editörde görünür)">` : `<h2>${esc(label(id))}</h2>`}
+        <code>${esc(id)}</code><b class="new" style="background:#0b84d8">konuşma kümesi</b>
+        ${isCustom(id) ? '<b class="new">yeni</b>' : ''}
+        <span class="grow"></span>
+        <button class="btn sm" id="expTalk" title="Bu konuşma kümesini .json dosyası olarak indir">⬇ JSON dışa aktar</button>
+        ${isCustom(id) ? '<button class="btn sm danger" id="delIntent">Niyeti sil</button>'
+          : intentModified(id) ? '<button class="btn sm" id="resetIntent">Bu niyetteki tüm değişiklikleri geri al</button>' : ''}
+      </div>
+      ${SPECIAL[id] ? `<p class="desc">${esc(SPECIAL[id])}</p>` : ''}
+      ${NOTES[id] ? `<p class="desc">${esc(NOTES[id])}</p>` : ''}</div>`;
+
+    if (!isSpecial(id)) {
+      const words = wordsOf(id);
+      h += `<div class="card"><h3>Anahtar kelimeler <small class="st">${words.length}</small>
+          ${d.words && !isCustom(id) ? '<a id="resetWords" style="color:var(--accent);cursor:pointer;font-size:12.5px;margin-left:8px">varsayılana dön</a>' : ''}</h3>
+        <div class="chips">${words.map((w, i) => {
+          const win = winner(w);
+          const warn = win !== id;
+          const tip = warn ? `Bu kelime yazılınca önce "${label(win)}" eşleşiyor. Önceliği değiştir ya da kelimeyi daralt.` : 'Çift tıkla: düzenle';
+          return `<span class="chip ${warn ? 'warn' : ''}" title="${esc(tip)}" data-i="${i}">${esc(w)}<button data-del="${i}" title="Sil">×</button></span>`;
+        }).join('') || '<span class="hint">Henüz kelime yok.</span>'}</div>
+        <div class="row">
+          <input type="text" id="wIn" placeholder="kelime ya da kalıp — virgülle birden fazla (ör. şarkı, müzik dinler misin)">
+          <label title="Sadece mesaj bu kelimeyle başlıyorsa ve kelime tam ise (^)"><input type="checkbox" id="wStart"> sadece mesaj başında</label>
+          <button class="btn" id="wAdd">Ekle</button>
+        </div>
+        <p class="hint">Kelimenin <b>başı</b> eşleşir: "özled" → özledim, özlemişim… Türkçe harfler, büyük/küçük harf ve tekrar eden harfler fark etmez (selaaam = selam).
+          Çok kelimeli kalıplar ("nasıl gidiyor") yan yana aranır. <b>^</b> ile başlayanlar sadece mesajın başında, tam kelime olarak eşleşir ("^ok" → "ok" tutar, "okul" tutmaz).
+          ⚠ işaretli kelimeler üstteki başka bir niyete takılıyor.</p></div>`;
+
+      const eff = effOf(id);
+      const pos = order().indexOf(id) + 1;
+      h += `<div class="grid2">
+        <div class="card"><h3>Öncelik</h3>
+          <div class="row"><select id="before">
+            <option value="">${isCustom(id) ? '(en sona)' : '(varsayılan yeri)'}</option>
+            ${order().filter(x => x !== id).map(x => `<option value="${esc(x)}" ${d.before === x ? 'selected' : ''}>«${esc(label(x))}» niyetinden önce</option>`).join('')}
+          </select></div>
+          <p class="hint">Şu an <b>${pos}.</b> sırada. Mesaj birden fazla niyete uyarsa listede üstte olan kazanır.
+            Sohbette birkaç mesaj birden gelirse yine en üstteki niyet cevaplanır. Soru ve anlaşılmayan mesaj her zaman en sondadır.</p>
+        </div>
+        <div class="card"><h3>Etkisi ${d.effect && !isCustom(id) ? '<a id="resetEff" style="color:var(--accent);cursor:pointer;font-size:12.5px;margin-left:8px">varsayılana dön</a>' : ''}</h3>
+          <div class="eff">
+            <label>Mutluluk</label><input type="range" id="effV" min="-0.4" max="0.4" step="0.01" value="${eff.valence}"><output>${fmt(eff.valence)}</output>
+            <label>Heyecan</label><input type="range" id="effA" min="-0.3" max="0.3" step="0.01" value="${eff.arousal}"><output>${fmt(eff.arousal)}</output>
+            <label>Yakınlık puanı</label><input type="range" id="effF" min="-10" max="10" step="1" value="${eff.aff}"><output>${fmt(eff.aff, 0)}</output>
+          </div>
+          <p class="hint">Bu niyetteki bir mesaj karakterin ruh halini ve yakınlığınızı bu kadar değiştirir. Yakınlık: Lv.2 için 8, Lv.3 için 20 puan gerekir.</p>
+        </div></div>`;
+    }
+
+    h += '<div id="kfnMount"></div>'; // ƒ fonksiyon (kume-lab.js)
+    const paths = pathsFor(id);
+    if (paths.length) {
+      h += `<div class="card"><h3>Cevap yolları</h3>
+        <div class="tabs">${P.arch.map(a => `<button class="tab ${a.id === arch ? 'on' : ''}" data-arch="${a.id}">${a.icon} ${esc(a.label)}${archModified(a.id, id) ? '<i class="dot"></i>' : ''}</button>`).join('')}</div>
+        ${paths.map(p => {
+          const key = p.key(id);
+          return `<div class="path" data-key="${esc(key)}">
+            <div class="ph"><b>${p.name}</b><small>${p.hint}</small><span class="st"></span>
+              <span class="acts"><a data-act="sample">örnek</a><a data-act="copy">tüm kişiliklere kopyala</a><a data-act="reset">varsayılana dön</a></span></div>
+            <textarea rows="${Math.min(8, Math.max(3, poolCur(arch, key).length + 1))}" spellcheck="false" placeholder="Her satır bir cevap. | ile birden fazla balon: selam|nasılsın?">${esc(poolCur(arch, key).join('\n'))}</textarea>
+            <div class="bubbles"></div></div>`;
+        }).join('')}
+        <details><summary>Cümlelerde kullanılabilecek kısaltmalar</summary><div class="legend">
+          <code>a|b</code><span>iki ayrı mesaj balonu</span>
+          <code>{h}</code><span>yakınlığa göre hitap (" canım" ya da boş)</span>
+          <code>{name}</code><span>kullanıcının adı</span><code>{self}</code><span>karakterin adı</span>
+          <code>{age} {city} {district}</code><span>yaş, şehir, semt</span>
+          <code>{city_at}</code><span>"İzmir'deyim"</span><code>{fav}</code><span>şehirde sevdiği yer</span>
+          <code>{job_is}</code><span>"mimarım"</span><code>{doing}</code><span>mesleğine göre şu an ne yaptığı</span>
+          <code>{like} {like2}</code><span>sevdiği şeylerden</span><code>{laugh}</code><span>kişiliğe göre gülme (ahah, hh, ASDJK…)</span>
+        </div></details>
+        <p class="hint">Karakter son kullandığı ~14 cümleyi tekrar etmez, bu yüzden her yolda birkaç farklı cümle olması iyidir. Kullanıcıya ilgisi düşükse
+          (kuru cevaplar, tekrarlar) kısa sohbet niyetlerinde bu yollar yerine "hmm, tamam" gibi tek kelimelik cevaplar verir.</p></div>`;
+    }
+    main.innerHTML = h;
+    const fm = main.querySelector('#kfnMount');
+    if (fm) KumeLab.page(fm, kctx(), { mode: 'fn', id });
+    refreshStatus();
+  }
+
+  /* Küme sistemi (kume-lab.js) için bağlam: değişiklikler D.kume'ye yazılır, Kaydet ile custom-dialog.js'e gider */
+  const kctx = () => ({ A, E, esc, demo, label, arch: () => arch, get archs() { return A.ARCHETYPES; },
+    go: to => { cur = to; renderSide(); renderMain(); window.scrollTo({ top: 0 }); },
+    persist: data => { D.kume = data; changed(false); }, exportTalk: id => download('konusma-' + label(id), talkFile([id])) });
+
+  const fmt = (v, n = 2) => (v > 0 ? '+' : '') + Number(v).toFixed(n);
+  function effOf(id) {
+    const e = A.INTENT_EFFECTS[id] || {};
+    return { valence: e.valence || 0, arousal: e.arousal || 0, aff: e.aff ?? 1 };
+  }
+  function winner(w) {
+    const t = w.replace(/^\^/, '');
+    return E.detect(t).intent;
+  }
+  const warnOf = w => winner(w) !== cur ? `"${w}" yazılınca önce "${label(winner(w))}" eşleşiyor.` : null;
+
+  function refreshStatus() {
+    main.querySelectorAll('.path').forEach(el => {
+      const key = el.dataset.key;
+      const p = PATHS.find(x => x.key(keyIntent(key)) === key);
+      const own = poolCur(arch, key);
+      const st = el.querySelector('.st');
+      const mod = isModKey(arch, key);
+      el.classList.toggle('mod', mod);
+      el.querySelector('[data-act=reset]').hidden = !mod;
+      if (!own.length) {
+        if (p.id === 'normal' && KEEP.includes(keyIntent(key))) { st.className = 'st empty'; st.textContent = 'boş bırakılamaz, varsayılan cümleler kullanılır'; return; }
+        const r = resolve(arch, keyIntent(key), p);
+        st.className = 'st empty'; st.textContent = 'boş → ' + r.via + ' kullanılır';
+      } else {
+        st.className = 'st' + (mod ? ' mod' : '');
+        st.textContent = own.length + ' cümle' + (mod ? ' · değiştirildi' : '');
+      }
+    });
+    main.querySelectorAll('.tab').forEach(t => {
+      const has = archModified(t.dataset.arch, cur);
+      const dot = t.querySelector('.dot');
+      if (has && !dot) t.insertAdjacentHTML('beforeend', '<i class="dot"></i>');
+      if (!has && dot) dot.remove();
+    });
+  }
+
+  function addWords() {
+    const inp = $('#wIn');
+    const start = $('#wStart').checked;
+    const items = inp.value.split(',').map(s => s.trim().replace(/\s+/g, ' ')).filter(Boolean).map(s => {
+      const isStart = start || /^\^/.test(s);
+      return (isStart ? '^' : '') + s.replace(/^\^+/, '');
+    });
+    if (!items.length) return;
+    const words = [...wordsOf(cur)];
+    const known = words.map(w => w.startsWith('^') + E.norm(w));
+    const added = [];
+    items.forEach(w => {
+      const k = w.startsWith('^') + E.norm(w);
+      if (!E.norm(w) && !/\p{Extended_Pictographic}/u.test(w)) return;
+      if (!known.includes(k)) { words.push(w); known.push(k); added.push(w); }
+    });
+    if (!added.length) return toast('Bu kelime zaten var.');
+    setWords(cur, words);
+    changed();
+    const shadow = added.map(warnOf).filter(Boolean);
+    if (shadow.length) toast('⚠ ' + shadow[0]);
+    const w = $('#wIn'); w.focus();
+  }
+
+  main.addEventListener('click', e => {
+    const t = e.target;
+    if (t.closest('#kume')) return; // deney sayfası kendi olaylarını yönetir
+    if (t.id === 'wAdd') return addWords();
+    if (t.id === 'expTalk') return download('konusma-' + label(cur), talkFile([cur]));
+    if (t.dataset.del != null) {
+      const words = [...wordsOf(cur)]; words.splice(+t.dataset.del, 1);
+      setWords(cur, words); return changed();
+    }
+    if (t.id === 'resetWords') { delete def(cur).words; tidy(cur); return changed(); }
+    if (t.id === 'resetEff') { delete def(cur).effect; tidy(cur); return changed(); }
+    if (t.id === 'resetIntent') {
+      if (!confirm(`"${label(cur)}" niyetindeki tüm değişiklikler (kelimeler, öncelik, etki, bütün kişiliklerdeki cümleler) geri alınsın mı?`)) return;
+      delete D.intents[cur];
+      dropLines(cur);
+      return changed();
+    }
+    if (t.id === 'delIntent') {
+      if (!confirm(`"${label(cur)}" niyeti ve bütün cümleleri silinsin mi?`)) return;
+      const gone = cur, before = D.intents[gone].before;
+      delete D.intents[gone];
+      Object.values(D.intents).forEach(x => { if (x.before === gone) { if (before) x.before = before; else delete x.before; } });
+      dropLines(gone);
+      cur = 'greet';
+      return changed();
+    }
+    const tab = t.closest('.tab');
+    if (tab) { arch = tab.dataset.arch; $('#tArch').value = arch; renderMain(); return runTest(); }
+    if (t.dataset.act) {
+      const el = t.closest('.path'), key = el.dataset.key;
+      if (t.dataset.act === 'sample') {
+        const p = PATHS.find(x => x.key(keyIntent(key)) === key);
+        const r = poolCur(arch, key).length ? { pool: poolCur(arch, key) } : resolve(arch, keyIntent(key), p);
+        el.querySelector('.bubbles').innerHTML = r.pool.length ? bubbles(arch, pickRaw(r.pool)) : '<span class="hint">ortak kısa cümle (hmm, tamam…)</span>';
+      }
+      if (t.dataset.act === 'reset') {
+        D.lines[arch] && delete D.lines[arch][key];
+        if (D.lines[arch] && !Object.keys(D.lines[arch]).length) delete D.lines[arch];
+        changed();
+      }
+      if (t.dataset.act === 'copy') {
+        const list = poolCur(arch, key);
+        if (!confirm(`Bu ${list.length} cümle tüm kişiliklerde bu yola yazılsın mı? (Diğer kişiliklerin bu yoldaki cümleleri değişir.)`)) return;
+        P.arch.forEach(a => setPool(a.id, key, [...list]));
+        changed();
+        toast('Tüm kişiliklere kopyalandı. Kişiliğe göre tonu düzeltmeyi unutma.');
+      }
+    }
+  });
+  main.addEventListener('dblclick', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    const words = [...wordsOf(cur)];
+    const [w] = words.splice(+chip.dataset.i, 1);
+    setWords(cur, words); changed();
+    $('#wIn').value = bareW(w); $('#wStart').checked = /^~?\^/.test(w); $('#wIn').focus();
+  });
+  main.addEventListener('keydown', e => { if (e.target.id === 'wIn' && e.key === 'Enter') addWords(); });
+  main.addEventListener('change', e => {
+    const t = e.target;
+    if (t.closest('#kume')) return;
+    if (t.id === 'before') {
+      const d = def(cur);
+      if (t.value) d.before = t.value; else if (isCustom(cur)) d.before = ''; else delete d.before;
+      if (d.before === '') delete d.before;
+      tidy(cur); changed();
+    }
+    if (t.id === 'lblIn') { def(cur).label = t.value.trim() || cur; changed(); }
+  });
+  main.addEventListener('input', e => {
+    const t = e.target;
+    if (t.closest('#kume')) return;
+    if (t.tagName === 'TEXTAREA') {
+      const key = t.closest('.path').dataset.key;
+      setPool(arch, key, t.value.split('\n').map(s => s.trim()).filter(Boolean));
+      return changed(false);
+    }
+    if (['effV', 'effA', 'effF'].includes(t.id)) {
+      t.nextElementSibling.textContent = fmt(t.value, t.id === 'effF' ? 0 : 2);
+      const eff = { valence: +$('#effV').value, arousal: +$('#effA').value, aff: +$('#effF').value };
+      const o = P.effects[cur] || {};
+      const orig = { valence: o.valence || 0, arousal: o.arousal || 0, aff: o.aff ?? 1 };
+      const d = def(cur);
+      if (!isCustom(cur) && same(eff, orig)) delete d.effect; else d.effect = eff;
+      tidy(cur); changed(false);
+    }
+  });
+
+  function dropLines(id) {
+    Object.keys(D.lines).forEach(aid => {
+      Object.keys(D.lines[aid]).forEach(k => { if (keyIntent(k) === id) delete D.lines[aid][k]; });
+      if (!Object.keys(D.lines[aid]).length) delete D.lines[aid];
+    });
+  }
+
+  /* ---------- Test ---------- */
+  const tIn = $('#tIn'), tOut = $('#tOut'), tArch = $('#tArch');
+  tArch.innerHTML = P.arch.map(a => `<option value="${a.id}">${a.icon} ${esc(a.label)}</option>`).join('');
+  function runTest() {
+    const msg = tIn.value.trim();
+    if (!msg) { tOut.innerHTML = ''; return; }
+    const d = E.detect(msg);
+    const id = d.intent;
+    const why = d.word ? `eşleşen kelime: <b>${esc(d.word)}</b>`
+      : id === 'tell_name' ? `ad yakalandı: <b>${esc(d.name)}</b>`
+      : id === 'question' ? 'hiçbir kelime tutmadı, soru gibi göründüğü için'
+      : 'hiçbir kelime tutmadı';
+    const ways = pathsFor(id).map(p => {
+      const r = resolve(arch, id, p);
+      return `<div class="way"><small>${p.name}${r.via ? ' · ' + esc(r.via) : ''}</small>
+        ${r.pool.length ? `<div class="bubbles">${bubbles(arch, pickRaw(r.pool))}</div>` : '<span class="hint">hmm / tamam…</span>'}</div>`;
+    }).join('') || `<div class="way">${esc(NOTES[id] || '')}</div>`;
+
+
+    const canAdd = !isSpecial(cur) && !isPage(cur) && d.text && cur !== id;
+    tOut.innerHTML = `<div class="res"><div class="top">
+        <span>→</span><b>${esc(label(id))}</b><code>${esc(id)}</code><span class="hint" style="margin:0">${why}${d.greet ? ' · selam da içeriyor, cevabın başına selam eklenir' : ''}</span>
+        <span class="grow"></span>
+        <button class="btn sm" data-go="${esc(id)}">Bu niyeti aç</button>
+        ${canAdd ? `<button class="btn sm" data-addto="1">"${esc(d.text)}" → «${esc(label(cur))}» kelimelerine ekle</button>` : ''}
+        <button class="btn sm" data-again="1">başka örnek</button>
+      </div><div class="ways">${ways}</div></div>`;
+  }
+  tIn.addEventListener('input', runTest);
+  tArch.addEventListener('change', () => { arch = tArch.value; renderMain(); runTest(); });
+  tOut.addEventListener('click', e => {
+    const t = e.target;
+    if (t.dataset.go) { cur = t.dataset.go; renderSide(); renderMain(); }
+    if (t.dataset.again) runTest();
+    if (t.dataset.addto) {
+      const text = E.detect(tIn.value).text;
+      const words = [...wordsOf(cur)];
+      if (!words.some(w => E.norm(w) === text)) { words.push(text); setWords(cur, words); changed(); toast(`"${text}" eklendi.`); }
+    }
+  });
+
+  /* ---------- Başlat ---------- */
+  $('#save').addEventListener('click', save);
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); if (!$('#save').disabled) save(); }
+  });
+  window.addEventListener('beforeunload', e => { if (JSON.stringify(D) !== saved) { e.preventDefault(); e.returnValue = ''; } });
+
+  fetch('/api/dialog', { cache: 'no-store' })
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(j => {
+      D = { intents: j.intents || {}, lines: j.lines || {},
+ };
+      if (j.kume) D.kume = j.kume;
+      KumeLab.init(j.kume); // dosyada yoksa tarayıcıdaki eski deney kaydı ya da varsayılanlar
+      cur = 'sc:' + KumeLab.activeScenario();
+      saved = JSON.stringify(D);
+      changed();
+    })
+    .catch(() => {
+      document.body.innerHTML = `<div class="fatal"><h2>Sunucuya ulaşılamadı</h2>
+        <p>Bu sayfa proje klasöründeki <b>gracie-studyo.bat</b> ile açılmalı. Bat dosyası küçük bir yerel sunucu başlatır ve editörü tarayıcıda açar;
+        kaydettiklerin <code>js/amor/data/custom-dialog.js</code> dosyasına yazılır.</p>
+        <p>Siyah pencere kapandıysa bat dosyasını tekrar çalıştır.</p></div>`;
+    });
+})();
+</script>
+</body>
+</html>

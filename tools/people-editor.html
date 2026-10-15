@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kişiler · Gracie Stüdyo</title>
+<link rel="icon" href="../icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --accent: #00aff0; --deep: #0089c4; --pale: #eaf8fe; --pale2: #d2eefc; --ink: #0b2a3c; --soft: #5c7d90; --line: #d9eef8; --red: #c62828; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Inter, system-ui, sans-serif; color: var(--ink); background: var(--pale); height: 100vh; display: flex; flex-direction: column; }
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; font-size: 14px; color: var(--ink); width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; outline: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 64px; }
+label { display: block; font-size: 12px; font-weight: 700; color: var(--soft); margin: 12px 0 5px; }
+.btn { background: var(--accent); color: #fff; border: 0; border-radius: 999px; padding: 9px 18px; font-weight: 700; font-size: 13.5px; }
+.btn:hover { background: var(--deep); }
+.btn.ghost { background: #fff; color: var(--deep); border: 1px solid var(--line); }
+.btn.ghost:hover { background: var(--pale2); }
+.btn:disabled { opacity: .45; cursor: default; }
+header { background: #fff; border-bottom: 1px solid var(--line); padding: 10px 18px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+header a { color: var(--deep); font-weight: 600; font-size: 13px; text-decoration: none; }
+header h1 { font-family: Sora, sans-serif; font-size: 18px; margin: 0 auto 0 4px; }
+#status { font-size: 13px; color: var(--soft); }
+#status.ok { color: #2e7d32; } #status.err { color: var(--red); }
+main { flex: 1; display: flex; min-height: 0; }
+aside { width: 320px; flex-shrink: 0; background: #fff; border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+aside .search { padding: 10px; border-bottom: 1px solid var(--line); }
+#list { overflow-y: auto; flex: 1; }
+.row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #f1f8fc; }
+.row:hover { background: var(--pale); }
+.row.on { background: var(--pale2); }
+.row img, .row .noimg { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--pale2); display: flex; align-items: center; justify-content: center; }
+.row .t { flex: 1; min-width: 0; }
+.row b { display: block; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row small { display: block; color: var(--soft); font-size: 11.5px; }
+.tag { font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: var(--pale); color: var(--deep); }
+.tag.warn { background: #fff3e0; color: #b45309; }
+.grp { font-size: 11px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: var(--soft); padding: 12px 12px 4px; background: #fbfdff; }
+section#detail { flex: 1; overflow-y: auto; padding: 22px 26px 60px; }
+.empty { color: var(--soft); text-align: center; margin-top: 80px; }
+.head { display: flex; gap: 18px; align-items: center; }
+.head img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--accent); }
+.head h2 { font-family: Sora, sans-serif; margin: 0; font-size: 24px; }
+.head small { color: var(--soft); }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.card { background: #fff; border-radius: 18px; padding: 16px 18px; margin-top: 16px; box-shadow: 0 8px 24px rgba(0, 130, 190, .08); }
+.card h3 { margin: 0 0 4px; font-size: 15px; }
+.hint { color: var(--soft); font-size: 12.5px; margin: 2px 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { border: 1px solid var(--line); background: #fff; color: var(--soft); border-radius: 999px; padding: 5px 11px; font-size: 12.5px; font-weight: 600; }
+.chips button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; }
+.ph { position: relative; border-radius: 14px; overflow: hidden; background: var(--pale2); aspect-ratio: 4 / 5; }
+.ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ph.prof { box-shadow: 0 0 0 3px var(--accent); }
+.ph .badge { position: absolute; top: 6px; left: 6px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; }
+.ph .acts { position: absolute; inset: auto 0 0 0; display: flex; justify-content: space-between; padding: 6px; background: linear-gradient(transparent, rgba(0,0,0,.55)); opacity: 0; transition: opacity .15s; }
+.ph:hover .acts { opacity: 1; }
+.ph .acts button { border: 0; border-radius: 999px; padding: 4px 9px; font-size: 12px; font-weight: 700; background: rgba(255,255,255,.92); color: var(--ink); }
+.ph .acts button.del { color: var(--red); }
+.ph .fname { position: absolute; bottom: 0; left: 0; right: 0; font-size: 10.5px; color: #fff; padding: 2px 6px; background: rgba(0,0,0,.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ph:hover .fname { display: none; }
+.drop { border: 2px dashed var(--line); border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--soft); font-size: 12.5px; text-align: center; padding: 10px; cursor: pointer; aspect-ratio: 4 / 5; }
+.drop.over { border-color: var(--accent); background: var(--pale2); color: var(--deep); }
+.drop span { font-size: 28px; }
+.warn { background: #fff3e0; color: #8a4b00; border-radius: 12px; padding: 8px 12px; font-size: 12.5px; margin-top: 10px; }
+.newjob { display: none; background: var(--pale); border-radius: 12px; padding: 4px 12px 12px; margin-top: 8px; }
+.newjob.show { display: block; }
+pre#log { white-space: pre-wrap; font-size: 12px; background: #0b2a3c; color: #d2eefc; border-radius: 12px; padding: 12px; max-height: 240px; overflow: auto; display: none; }
+@media (max-width: 860px) { main { flex-direction: column; } aside { width: auto; max-height: 40vh; } .cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+    <a href="studio.html">← Gracie Stüdyo</a>
+    <h1>👥 Kişiler ve fotoğraflar</h1>
+    <span id="status"></span>
+    <button class="btn ghost" id="newBtn">+ Yeni karakter</button>
+    <button class="btn ghost" id="buildBtn" title="fotograflar\ klasöründeki değişiklikleri uygulamaya hazırlar">🔄 Fotoğrafları güncelle</button>
+    <button class="btn" id="saveBtn" disabled>💾 Kaydet</button>
+</header>
+<main>
+    <aside><div class="search"><input id="q" placeholder="Ara: isim, klasör, kişilik…" autocomplete="off"></div><div id="list"></div></aside>
+    <section id="detail"><div class="empty">Soldan bir karakter seç ya da <b>+ Yeni karakter</b> ile ekle.</div></section>
+</main>
+
+<script src="../js/data/people.js"></script>
+<script src="../js/data/people-defs.js"></script>
+<script src="../js/data/traits.js"></script>
+<script src="../js/amor/data/pools.js"></script>
+<script src="../js/amor/data/archetypes.js"></script>
+<script>
+const $ = (s, el = document) => el.querySelector(s), $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const GROUPS = { gracie: "Gracie (senin karakterlerin)", carmen: "Carmen", dontstop: "Don't Stop", amor: "Amor" };
+const groupOf = id => id.startsWith("a-") ? "amor" : id.startsWith("ds-") ? "dontstop" : id.startsWith("carmen-") ? "carmen" : "gracie";
+const ARCH = Amor.ARCHETYPES.map(a => ({ id: a.id, label: a.label, icon: a.icon }));
+let defs = JSON.parse(JSON.stringify(Gracie.PEOPLE_DEFS || {})), jobs = JSON.parse(JSON.stringify(Gracie.EXTRA_JOBS || []));
+let folders = [], sets = Gracie.SETS || [], sel = null, dirty = false, busy = false;
+
+function status(text, cls = "") { const s = $("#status"); s.textContent = text; s.className = cls; }
+async function call(path, opts = {}) {
+    const r = await fetch(path, opts);
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.ok === false) throw new Error(j.error || `Sunucu hatası (${r.status})`);
+    return j;
+}
+const setById = id => sets.find(s => s.id === id);
+const thumb = f => { const s = setById(f.id); return s ? `../people/${encodeURIComponent(s.id)}/sm/${s.files[0]}` : f.files.length ? `../fotograflar/${encodeURIComponent(f.folder)}/${encodeURIComponent(f.files[0])}` : null; };
+// the folder has photos the app doesn't have yet
+const stale = f => { const s = setById(f.id); return f.files.length && (!s || s.files.length !== f.files.length); };
+
+async function loadFolders() {
+    try { folders = (await call("/api/photos")).folders; }
+    catch (e) { status("Stüdyo sunucusuna ulaşılamadı: gracie-studyo.bat ile aç", "err"); folders = sets.map(s => ({ folder: s.id, id: s.id, files: [], unreadable: [] })); }
+}
+async function reloadSets() {
+    const txt = await (await fetch("../js/data/people.js", { cache: "no-store" })).text();
+    new Function(txt)();
+    sets = Gracie.SETS || [];
+}
+
+function renderList() {
+    const q = $("#q").value.trim().toLocaleLowerCase("tr");
+    const match = f => { const d = defs[f.id] || {}; return !q || `${d.name || ""} ${f.folder} ${d.archetype || ""} ${d.job || ""}`.toLocaleLowerCase("tr").includes(q); };
+    let html = "";
+    for (const g of Object.keys(GROUPS)) {
+        const list = folders.filter(f => groupOf(f.id) === g && match(f));
+        if (!list.length) continue;
+        html += `<div class="grp">${GROUPS[g]} · ${list.length}</div>` + list.map(f => {
+            const d = defs[f.id] || {}, t = thumb(f), a = ARCH.find(x => x.id === d.archetype);
+            return `<div class="row ${sel === f.id ? "on" : ""}" data-id="${esc(f.id)}">${t ? `<img src="${esc(t)}" loading="lazy" alt="">` : `<span class="noimg">📷</span>`}
+                <span class="t"><b>${esc(d.name || f.folder)}</b><small>${esc(f.folder)} · ${f.files.length} fotoğraf${a ? " · " + a.icon + " " + a.label : ""}</small></span>
+                ${stale(f) ? `<span class="tag warn" title="Fotoğrafları güncelle'ye bas">güncelle</span>` : ""}</div>`;
+        }).join("");
+    }
+    $("#list").innerHTML = html || `<div class="empty" style="margin-top:30px">Bulunamadı</div>`;
+}
+$("#q").addEventListener("input", renderList);
+$("#list").addEventListener("click", e => { const r = e.target.closest("[data-id]"); if (r) { sel = r.dataset.id; renderList(); renderDetail(); } });
+
+const allJobs = () => [...new Set([...Amor.JOBS.map(j => j.title), ...jobs.map(j => j.title)])].sort((a, b) => a.localeCompare(b, "tr"));
+function renderDetail() {
+    const f = folders.find(x => x.id === sel);
+    if (!f) { $("#detail").innerHTML = `<div class="empty">Soldan bir karakter seç.</div>`; return; }
+    const d = defs[f.id] || {}, t = thumb(f), traits = d.traits || [];
+    const prof = f.files.find(n => /^(profil|profile)\./i.test(n)) || f.files[0];
+    $("#detail").innerHTML = `
+        <div class="head">${t ? `<img src="${esc(t)}" alt="">` : ""}<div><h2>${esc(d.name || f.folder)}</h2>
+            <small>Klasör: fotograflar\\${esc(f.folder)} · kimlik: ${esc(f.id)} · ${GROUPS[groupOf(f.id)]}</small></div></div>
+        <div class="card"><h3>Kim bu?</h3><p class="hint">Boş bırakılanlar uygulamada Amor havuzundan rastgele seçilir. Kaydettikten sonra uygulamayı yenile.</p>
+            <div class="cols">
+                <div><label>Ad</label><input data-k="name" value="${esc(d.name)}" placeholder="rastgele"></div>
+                <div><label>Kişilik (konuşma tarzı)</label><select data-k="archetype"><option value="">rastgele</option>${ARCH.map(a => `<option value="${a.id}" ${d.archetype === a.id ? "selected" : ""}>${a.icon} ${esc(a.label)}</option>`).join("")}</select></div>
+                <div><label>Yaş</label><input data-k="age" type="number" min="18" max="60" value="${esc(d.age)}" placeholder="rastgele"></div>
+                <div><label>Şehir</label><select data-k="city"><option value="">rastgele</option>${Amor.CITIES.map(c => `<option ${d.city === c.name ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></div>
+                <div><label>Meslek</label><input data-k="job" list="jobList" value="${esc(d.job)}" placeholder="rastgele (yazabilir ya da seçebilirsin)">
+                    <datalist id="jobList">${allJobs().map(j => `<option value="${esc(j)}">`).join("")}</datalist></div>
+                <div><label>Biyografi (profildeki kısa yazı)</label><input data-k="bio" value="${esc(d.bio)}" placeholder="rastgele" maxlength="120"></div>
+            </div>
+            <div class="newjob" id="newJob"><label>Bu meslek havuzda yok. Kendini tanıtırken ne der?</label><input id="njIs" placeholder="ör. cadıyım, evet gerçekten">
+                <label>Ne yapıyorsun diye sorulunca (virgülle ayır)</label><input id="njDoing" placeholder="ör. iksir kaynatıyorum, büyü kitabımı okuyorum"></div>
+            <label>Hakkında (profilde uzun açıklama)</label><textarea data-k="about" rows="3" placeholder="isteğe bağlı">${esc(d.about)}</textarea>
+            <label>Özellikler (bot kuralları bunlara bakar)</label>
+            ${Stories.Traits.groups.filter(g => g.items.length).map(g => `<div class="hint" style="margin:6px 0 4px">${esc(g.label)}</div>
+                <div class="chips">${g.items.map(x => `<button type="button" data-tr="${esc(x)}" class="${traits.includes(x) ? "on" : ""}">${esc(x)}</button>`).join("")}</div>`).join("")}
+        </div>
+        <div class="card"><h3>Fotoğraflar · ${f.files.length}</h3>
+            <p class="hint">Profil fotoğrafı mavi çerçeveli. Eklediğin her fotoğraf uygulamada yeni bir gönderi olur. Silinen fotoğraflar Geri Dönüşüm Kutusu'na gider.</p>
+            ${f.unreadable.length ? `<div class="warn">Okunamayan biçim (JPG ya da PNG olarak kaydet): ${f.unreadable.map(esc).join(", ")}</div>` : ""}
+            <div class="photos">
+                <label class="drop" id="drop"><span>➕</span>Fotoğraf ekle<br><small>sürükle bırak ya da tıkla</small><input type="file" id="fileIn" accept="image/*" multiple hidden></label>
+                ${f.files.map(n => `<div class="ph ${n === prof ? "prof" : ""}"><img src="../fotograflar/${encodeURIComponent(f.folder)}/${encodeURIComponent(n)}" loading="lazy" alt="">
+                    ${n === prof ? `<span class="badge">profil</span>` : ""}<span class="fname">${esc(n)}</span>
+                    <div class="acts">${n === prof ? "<span></span>" : `<button data-prof="${esc(n)}">⭐ Profil yap</button>`}<button class="del" data-del="${esc(n)}">🗑</button></div></div>`).join("")}
+            </div>
+            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="openBtn">📂 Klasörü aç</button></div>
+            <pre id="log"></pre>
+        </div>`;
+    const jobIn = $('[data-k="job"]');
+    const checkJob = () => {
+        const v = jobIn.value.trim(), known = !v || Amor.JOBS.some(j => j.title === v) || jobs.some(j => j.title === v);
+        $("#newJob").classList.toggle("show", !known);
+    };
+    checkJob();
+    $$("[data-k]").forEach(el => el.addEventListener("input", () => {
+        const all = defs[f.id] = defs[f.id] || {};
+        const v = el.value.trim();
+        if (v) all[el.dataset.k] = el.dataset.k === "age" ? +v : v; else delete all[el.dataset.k];
+        if (el.dataset.k === "job") checkJob();
+        markDirty();
+    }));
+    $$("[data-tr]").forEach(b => b.addEventListener("click", () => {
+        const all = defs[f.id] = defs[f.id] || {}, list = all.traits = all.traits || [];
+        const i = list.indexOf(b.dataset.tr);
+        if (i >= 0) list.splice(i, 1); else list.push(b.dataset.tr);
+        if (!list.length) delete all.traits;
+        b.classList.toggle("on");
+        markDirty();
+    }));
+    ["njIs", "njDoing"].forEach(id => $("#" + id).addEventListener("input", markDirty));
+    $("#fileIn").addEventListener("change", e => upload(f, [...e.target.files]));
+    const drop = $("#drop");
+    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); upload(f, [...e.dataTransfer.files].filter(x => x.type.startsWith("image/"))); });
+    $("#openBtn").addEventListener("click", () => call("/api/photos/open-folder", { method: "POST", body: JSON.stringify({ folder: f.folder }) }).catch(e => status(e.message, "err")));
+    $$("[data-prof]").forEach(b => b.addEventListener("click", () => photoAction("set-profile", f, b.dataset.prof)));
+    $$("[data-del]").forEach(b => b.addEventListener("click", () => { if (confirm(`${b.dataset.del} silinsin mi? (Geri Dönüşüm Kutusu'na gider)`)) photoAction("delete-photo", f, b.dataset.del); }));
+}
+function markDirty() { dirty = true; $("#saveBtn").disabled = false; status("Kaydedilmemiş değişiklik var"); renderListSoon(); }
+let lt = null; const renderListSoon = () => { clearTimeout(lt); lt = setTimeout(renderList, 300); };
+
+// ---- photos ----
+async function upload(f, files) {
+    if (!files.length || busy) return;
+    busy = true;
+    try {
+        for (let i = 0; i < files.length; i++) {
+            status(`Yükleniyor ${i + 1}/${files.length}…`);
+            await call(`/api/photos/upload?folder=${encodeURIComponent(f.folder)}&name=${encodeURIComponent(files[i].name)}`, { method: "POST", body: files[i] });
+        }
+        await build(`${files.length} fotoğraf eklendi`);
+    } catch (e) { status(e.message, "err"); }
+    busy = false;
+}
+async function photoAction(action, f, name) {
+    try { await call(`/api/photos/${action}`, { method: "POST", body: JSON.stringify({ folder: f.folder, name }) }); await build(action === "set-profile" ? "Profil fotoğrafı değişti" : "Fotoğraf silindi"); }
+    catch (e) { status(e.message, "err"); }
+}
+// resized copies for the app (only changed folders), then refresh the lists
+async function build(done) {
+    status("Fotoğraflar uygulamaya hazırlanıyor…");
+    $("#buildBtn").disabled = true;
+    try {
+        const r = await call("/api/build-people", { method: "POST" });
+        await reloadSets(); await loadFolders();
+        renderList(); renderDetail();
+        const log = $("#log");
+        if (log && r.log) { log.textContent = r.log.trim(); log.style.display = "block"; }
+        status(`${done ? done + " · " : ""}hazır. Uygulamayı yenile (F5).`, "ok");
+    } catch (e) { status(e.message, "err"); }
+    $("#buildBtn").disabled = false;
+}
+$("#buildBtn").addEventListener("click", () => build(""));
+$("#newBtn").addEventListener("click", async () => {
+    const name = prompt("Yeni karakterin klasör adı (ör. Elif, Deniz Su). Fotoğrafları buraya ekleyeceksin:", "");
+    if (!name || !name.trim()) return;
+    try {
+        const r = await call("/api/photos/new-person", { method: "POST", body: JSON.stringify({ folder: name.trim() }) });
+        await loadFolders();
+        sel = r.id;
+        const d = defs[r.id] = defs[r.id] || {};
+        if (!d.name) { d.name = name.trim(); markDirty(); }
+        renderList(); renderDetail();
+        status("Klasör açıldı. Şimdi fotoğrafları ekle (profil fotoğrafının adı profil.jpg olsun ya da sonra ⭐ ile seç).", "ok");
+    } catch (e) { status(e.message, "err"); }
+});
+
+// ---- save the definitions ----
+$("#saveBtn").addEventListener("click", async () => {
+    // a job the pool doesn't know: add it to EXTRA_JOBS with what was typed
+    const f = folders.find(x => x.id === sel), d = f && defs[f.id];
+    if (d && d.job && !Amor.JOBS.some(j => j.title === d.job) && !jobs.some(j => j.title === d.job)) {
+        const is = ($("#njIs") || {}).value || "", doing = (($("#njDoing") || {}).value || "").split(",").map(s => s.trim()).filter(Boolean);
+        jobs.push({ title: d.job, is: is.trim() || `${d.job.toLocaleLowerCase("tr")} olarak çalışıyorum`, doing: doing.length ? doing : ["çalışıyorum"], arch: [] });
+    }
+    Object.keys(defs).forEach(k => { if (!Object.keys(defs[k]).length) delete defs[k]; });
+    try {
+        await call("/api/people-defs", { method: "POST", body: JSON.stringify({ defs: JSON.stringify(defs, null, 2), jobs: JSON.stringify(jobs, null, 2) }) });
+        dirty = false; $("#saveBtn").disabled = true;
+        status("Kaydedildi. Uygulamayı yenile (F5): değişiklikler hemen uygulanır.", "ok");
+        renderDetail();
+    } catch (e) { status(e.message, "err"); }
+});
+window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
+
+(async () => {
+    await loadFolders();
+    renderList();
+    const st = folders.filter(stale).length;
+    if (st) status(`${st} karakterin yeni fotoğrafı var: 🔄 Fotoğrafları güncelle`, "");
+})();
+</script>
+</body>
+</html>

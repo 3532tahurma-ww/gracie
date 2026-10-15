@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gracie</title>
+<script>
+(function () {
+    try {
+        var theme = localStorage.getItem("gracie_theme") || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+        if (localStorage.getItem("gracie_fx") === "0") document.documentElement.classList.add("no-fx");
+    } catch (e) {}
+})();
+// If something breaks while the app starts (an old browser, a broken update), say what instead of hanging
+// on the splash screen. Old-style JS on purpose: this must run even where the rest can't.
+window.__startErrors = [];
+window.addEventListener("error", function (e) {
+    var msg = (e && e.message) || "unknown error";
+    var where = e && e.filename ? " (" + e.filename.split("/").pop() + ":" + e.lineno + ")" : "";
+    window.__startErrors.push(msg + where);
+    var s = document.getElementById("splash");
+    if (s && !document.getElementById("startError")) {
+        var d = document.createElement("div");
+        d.id = "startError";
+        d.style.cssText = "position:absolute;bottom:40px;max-width:340px;padding:0 20px;text-align:center;font:13px/1.45 Inter,sans-serif;color:#0b4a6e";
+        d.innerHTML = "Gracie bu tarayıcıda açılamadı.<br><small style='opacity:.75'></small><br>" +
+            "<button style='margin-top:12px;padding:8px 16px;border-radius:99px;border:0;background:#00aff0;color:#fff' onclick='location.reload()'>Tekrar dene</button>";
+        d.querySelector("small").textContent = msg + where;
+        s.appendChild(d);
+    }
+});
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00aff0">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="description" content="Gracie: kendi hayatı, ruh hali ve seninle ilgili hafızası olan karakterlerle tanış, akışı gez, mesajlaş. Tamamen tarayıcında çalışır.">
+<script src="avatar.js"></script>
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/pages.css">
+<link rel="stylesheet" href="css/gracie.css">
+<link rel="stylesheet" href="css/effects.css">
+</head>
+<body>
+
+<div id="splash"><img class="splash-icon" src="icons/icon-big.png" alt="Gracie"></div>
+
+<!-- ============ Giriş ============ -->
+<div id="authScreen" style="display:none">
+    <div class="auth-hero">
+        <div class="auth-lang-switch">
+            <button class="theme-toggle-btn" data-theme-toggle title="Tema">🌙</button>
+        </div>
+        <div class="auth-hero-logo"><span class="heart-mark">💙</span> Gracie</div>
+        <div class="auth-hero-tagline">Aşk, bir gülümsemeyle<br>başlar.</div>
+        <div class="auth-hero-subtext">Kendi hayatı, ruh hali ve seninle ilgili hafızası olan insanlarla tanış. Akışı gez, hikayeleri izle, ilk mesajı sen at.</div>
+    </div>
+    <div class="auth-form-side">
+        <div class="auth-box card">
+            <div class="auth-box-heart">💙</div>
+            <div class="auth-sub">Kalbin için doğru yerdesin 💙</div>
+            <form id="loginForm" autocomplete="off">
+                <label for="loginUsername">Kullanıcı adı</label>
+                <input type="text" id="loginUsername" autocomplete="username">
+                <label for="loginPassword">Parola</label>
+                <input type="password" id="loginPassword" autocomplete="current-password">
+                <div class="error-msg" id="loginError"></div>
+                <button class="btn block" style="margin-top:14px" type="submit">Giriş yap</button>
+                <div class="auth-toggle"><span>Hesabın yok mu?</span> <a data-show-register>Kayıt ol</a></div>
+            </form>
+            <div class="auth-saved hidden" id="authSaved">
+                <div class="auth-saved-title">Bu cihazdaki hesaplar</div>
+                <div class="auth-saved-list" id="authSavedList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Kayıt ============ -->
+<div id="registerScreen" style="display:none">
+    <div class="reg-wizard-shell">
+        <div class="reg-wizard-card card">
+            <button class="icon-btn reg-wizard-exit" title="Girişe dön" data-show-login>✕</button>
+            <div class="reg-wizard-progress" id="regProgress"></div>
+            <div class="reg-wizard-step-body" id="regStepBody"></div>
+            <div class="error-msg" id="regError"></div>
+            <div class="reg-wizard-nav">
+                <button class="btn ghost" id="regBackBtn">← Geri</button>
+                <button class="btn" id="regNextBtn">Devam →</button>
+            </div>
+            <div class="auth-toggle"><span>Zaten hesabın var mı?</span> <a data-show-login>Giriş yap</a></div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ App ============ -->
+<div id="app" class="hidden">
+    <nav class="rail">
+        <div class="rail-logo"><img src="icon.png" alt=""><span class="logo-text">Gracie</span></div>
+        <button class="rail-item" data-view="home" title="Ana sayfa"><span class="ri"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></span><span class="lbl">Ana sayfa</span></button>
+        <button class="rail-item" data-view="explore" title="Keşfet"><span class="ri"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><span class="lbl">Keşfet</span></button>
+        <button class="rail-item" data-view="chat" title="Mesajlar"><span class="ri"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3 2 10.5l8 3 3 8z"/><path d="m10 13.5 5.5-5.5"/></svg><span class="rail-badge hidden" data-unread-count></span></span><span class="lbl">Mesajlar</span></button>
+        <button class="rail-item" data-view="activity" title="Bildirimler"><span class="ri ri-fill"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-9.6-9.2C.9 7.9 3 4 6.8 4c2.1 0 3.6 1.1 4.4 2.4h1.6C13.6 5.1 15.1 4 17.2 4 21 4 23.1 7.9 21.6 11.3 19.5 15.9 12 20.5 12 20.5z"/></svg><span class="rail-badge hidden" data-activity-count></span></span><span class="lbl">Bildirimler</span></button>
+        <button class="rail-item" data-view="matches" title="Bağların"><span class="ri"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="12" r="6.2"/><circle cx="12" cy="12" r="9.6"/><circle cx="18.2" cy="8.4" r="1.4"/><circle cx="4.6" cy="15.6" r="1.4"/></svg></span><span class="lbl">Bağların</span></button>
+        <button class="rail-item" data-view="profile" title="Profil kartın"><span class="ri"><span class="rail-me" id="railMe"></span></span><span class="lbl">Profil</span></button>
+        <div class="rail-spacer"></div>
+        <button class="rail-item" data-theme-toggle title="Açık / koyu"><span class="ri"><span class="ti">🌙</span></span><span class="lbl">Görünüm</span></button>
+        <button class="rail-item" data-view="settings" title="Ayarlar"><span class="ri"><svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="lbl">Daha fazla</span></button>
+    </nav>
+
+    <aside class="app-sidebar">
+        <div class="ib-head"><b data-me-name>—</b><span>Mesajlar</span></div>
+        <div class="st-scroller notes-scroller">
+            <button class="st-arrow prev hidden" aria-label="Önceki notlar">‹</button>
+            <div class="notes-row" id="notesRow"></div>
+            <button class="st-arrow next hidden" aria-label="Diğer notlar">›</button>
+        </div>
+        <div class="sb-section sb-grow sb-chats">
+            <div class="sb-label"><span>Mesajlar <span class="sb-count hidden" data-unread-count></span></span><span data-active-count></span></div>
+            <div class="sb-search"><input type="text" data-conv-search placeholder="Sohbetlerde ara" autocomplete="off"></div>
+            <div class="conv-list" id="convList"></div>
+        </div>
+    </aside>
+
+    <header class="topbar">
+        <div class="logo"><img src="icon.png" alt=""><span class="logo-text">Gracie</span></div>
+        <div class="topbar-right">
+            <button class="icon-btn" data-view="settings" title="Ayarlar">⚙️</button>
+            <button class="icon-btn" data-theme-toggle title="Tema">🌙</button>
+        </div>
+    </header>
+
+    <main class="app-shell">
+        <!-- Chat -->
+        <section class="view" id="view-chat">
+            <div class="card chat-card">
+                <div class="chat-main">
+                    <div class="chat-header">
+                        <button class="icon-btn back-btn" data-view="chats" title="Tüm sohbetler">‹</button>
+                        <div class="avatar clickable" id="headAvatar" title="Profilini gör"><span data-persona-photo><span data-persona-initial>G</span></span><span class="dot ok"></span></div>
+                        <div class="chat-titles">
+                            <div class="chat-name clickable" data-open-her title="Profilini gör"><span data-persona-name>Gracie</span><span class="chip" data-persona-meta></span></div>
+                            <div class="chat-status" id="chatStatus">çevrimiçi</div>
+                        </div>
+                        <div class="chat-actions">
+                            <button class="icon-btn hidden" id="langBtn" title="Sana öğrettiği kelimeler">📖</button>
+                            <button class="icon-btn" id="themeBtn" title="Sohbet teması">🎨</button>
+                            <button class="icon-btn" id="chatMenuBtn" title="Sohbet ayarları: cevap modu, ekler, sohbetler">🤖</button>
+                            <button class="icon-btn" id="debugToggle" title="Hata ayıklama paneli">🐞</button>
+                        </div>
+                    </div>
+                    <div class="chat-messages" id="messages"></div>
+                    <div class="reply-bar hidden" id="replyBar">
+                        <div class="rb-text"><b id="replyWho"></b><span id="replyText"></span></div>
+                        <button type="button" class="icon-btn" id="replyCancel" title="Vazgeç (Esc)">✕</button>
+                    </div>
+                    <div class="stk-panel hidden" id="stkPanel"></div>
+                    <div class="emoji-bar" id="emojiBar"></div>
+                    <form class="chat-input-row" id="sendForm">
+                        <button type="button" class="side-btn" id="sideBtn" title="Kim olarak yazıyorsun? (dokununca değişir)"></button>
+                        <button type="button" class="fx-btn" id="fxBtn" title="Sonraki mesaja efekt ekle">✨</button>
+                        <button type="button" class="stk-btn" id="stkBtn" title="Çıkartmalar">🙂</button>
+                        <textarea id="msgInput" rows="1" placeholder="Mesaj yaz…" autocomplete="off"></textarea>
+                        <button class="btn send-btn" type="submit" title="Gönder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+                        </button>
+                    </form>
+                </div>
+                <aside class="debug-panel hidden" id="debugPanel">
+                    <h3>Hata ayıklama <button class="icon-btn" id="debugClose" style="width:30px;height:30px;font-size:13px">✕</button></h3>
+                    <div id="debugBody"><p class="debug-empty">Henüz cevap yok. Cevap geldiğinde nasıl kurulduğu (niyet, konu, aşama, ruh hali, üslup adımları) burada görünür.</p></div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- Home: stories + everyone's posts -->
+        <section class="view view-scroll hidden" id="view-home">
+            <div class="home-wrap">
+                <div class="home-main">
+                    <div class="st-scroller">
+                        <button class="st-arrow prev hidden" aria-label="Önceki hikayeler">‹</button>
+                        <div class="sb-stories home-stories" id="homeStories"></div>
+                        <button class="st-arrow next hidden" aria-label="Diğer hikayeler">›</button>
+                    </div>
+                    <div class="feed" id="feed"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Explore: search people + every photo -->
+        <section class="view view-scroll hidden" id="view-explore">
+            <div class="explore-wrap">
+                <div class="sb-search ex-search"><input type="text" id="exSearch" placeholder="Kişi, şehir, meslek ara" autocomplete="off"></div>
+                <div class="ex-people hidden" id="exPeople"></div>
+                <div class="ex-grid" id="exGrid"></div>
+            </div>
+        </section>
+
+        <!-- Notifications -->
+        <section class="view view-scroll hidden" id="view-activity">
+            <div class="card narrow act-card">
+                <h2 class="section-title">Bildirimler</h2>
+                <div id="actList"><div class="heart-loader"><img src="icon.png" alt="">yükleniyor…</div></div>
+            </div>
+        </section>
+
+        <!-- Her profile (any character) -->
+        <section class="view view-scroll hidden" id="view-her">
+            <div class="card wide her-card" id="herProfile"><div class="heart-loader"><img src="icon.png" alt="">profil yükleniyor…</div></div>
+        </section>
+
+        <!-- Bağların: how close you are with everyone you talk to (js/bonds.js), then the faces you haven't met yet -->
+        <section class="view view-scroll hidden" id="view-matches">
+            <div class="wide matches-head">
+                <div>
+                    <h2 class="section-title">Bağların</h2>
+                    <p class="section-sub">Konuştukça yakınlaşırsınız: en içteki halka en yakınların. Her birinin kendi ruh hali ve seninle ilgili hafızası var.</p>
+                </div>
+                <div class="bond-toggle" id="bondToggle"><button data-bmode="map" title="Harita">🪐</button><button data-bmode="list" title="Liste">☰</button></div>
+            </div>
+            <div class="wide bonds" id="bonds"></div>
+            <div class="wide matches-head new-faces-head">
+                <div>
+                    <h2 class="section-title">Seni beğenenler</h2>
+                    <p class="section-sub">Profil kartını beğenip seninle bağ kuranlar. İlk mesajı sen at, ya da bekle: bazıları önce yazar 👀</p>
+                </div>
+            </div>
+            <div class="wide match-grid" id="matchGrid"></div>
+        </section>
+
+        <!-- Chat list (phones; on a computer it lives in the sidebar) -->
+        <section class="view view-scroll hidden" id="view-chats">
+            <div class="m-chats">
+                <div class="st-scroller notes-scroller">
+                    <button class="st-arrow prev hidden" aria-label="Önceki notlar">‹</button>
+                    <div class="notes-row" id="mNotes"></div>
+                    <button class="st-arrow next hidden" aria-label="Diğer notlar">›</button>
+                </div>
+                <div class="sb-label"><span>Mesajlar <span class="sb-count hidden" data-unread-count></span></span><span data-active-count></span></div>
+                <div class="sb-search"><input type="text" data-conv-search placeholder="Sohbetlerde ara" autocomplete="off"></div>
+                <div class="conv-list" id="mobileConvList"></div>
+            </div>
+        </section>
+
+        <!-- Profile -->
+        <section class="view view-scroll hidden" id="view-profile">
+            <div class="card wide">
+                <h2 class="section-title" id="profileFormTitle">Profil kartı</h2>
+                <p class="section-sub" id="profileFormSub">Herkesin gördüğü "fotoğraf", görünüşünden çizilir. İlk izlenim buradan gelir. Bu tarayıcıda saklanır.</p>
+                <form id="profileForm"></form>
+            </div>
+            <div class="card wide saved-card">
+                <div class="saved-head">
+                    <div>
+                        <h2 class="section-title">Hesabın</h2>
+                        <p class="section-sub">Hesaplar bu cihazda saklanır; her hesabın tüm sohbetleri kendine aittir.</p>
+                    </div>
+                    <button class="btn danger small" data-logout>Çıkış yap</button>
+                </div>
+                <div id="accountInfo"></div>
+            </div>
+        </section>
+
+        <!-- Settings -->
+        <section class="view view-scroll hidden" id="view-settings">
+            <div class="card narrow">
+                <h2 class="section-title">Ayarlar</h2>
+                <div class="settings-row">
+                    <div><div class="t">Koyu mod</div><div class="d">Gece sohbetleri için.</div></div>
+                    <label class="switch"><input type="checkbox" id="darkSwitch"><span class="slider"></span></label>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Görsel efektler</div><div class="d">Animasyonlar, kutlamalar ve parçacıklar. Sistemin hareketi azalt dediğinde de kapanır.</div></div>
+                    <label class="switch"><input type="checkbox" id="fxSwitch"><span class="slider"></span></label>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Mesaj sesleri</div><div class="d">Sen sohbetine bakmıyorken yazdığında yumuşak bir zil.</div></div>
+                    <label class="switch"><input type="checkbox" id="soundSwitch"><span class="slider"></span></label>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Titreşim</div><div class="d">Telefonda mesaj gelince, ilk mesajda ve yakınlık seviyesi artınca kısa bir titreşim.</div></div>
+                    <label class="switch"><input type="checkbox" id="hapticSwitch"><span class="slider"></span></label>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Masaüstü bildirimleri</div><div class="d">Sekme arka plandayken kimin ne yazdığı. Tıklayınca sohbeti açılır.</div></div>
+                    <label class="switch"><input type="checkbox" id="notifySwitch"><span class="slider"></span></label>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Hata ayıklama paneli</div><div class="d">Her cevabın nasıl kurulduğunu gösterir: niyet, konu, aşama, ruh hali ve üslup adımları.</div></div>
+                    <label class="switch"><input type="checkbox" id="debugSwitch"><span class="slider"></span></label>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Sohbet motoru</div><div class="d" data-llm-detail>—</div></div>
+                    <button class="btn ghost small" id="llmRefresh">Yenile</button>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Uygulamayı yükle</div><div class="d">Gracie'yi ana ekranına ya da masaüstüne ekle. Yüklendikten sonra çevrimdışı da çalışır.</div></div>
+                    <button class="btn ghost small" id="installBtn">Yükle</button>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Sohbeti sıfırla</div><div class="d">Temiz bir başlangıç: sohbeti, senin hakkında öğrendiklerini ve seni ne kadar sevdiğini siler. Yeni yüzler arasına geri döner. Profilin ve diğer sohbetler kalır.</div></div>
+                    <div class="reset-pick"><select id="resetWho" aria-label="Hangi sohbet"></select><button class="btn danger small" id="resetChat">Sıfırla</button></div>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Yedek al (JSON)</div><div class="d">Bu cihazdaki her şey tek dosyada: hesaplar, sohbetler, karakterler, yakınlık ve hafıza, temalar, ayarlar. Başka cihaza taşımak ya da saklamak için.</div></div>
+                    <button class="btn ghost small" id="backupBtn">İndir</button>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Yedekten geri yükle</div><div class="d">Bir Gracie yedeğini (.json) yükler. Bu cihazdaki Gracie verilerinin yerini alır; sonra yeniden giriş yaparsın.</div></div>
+                    <button class="btn ghost small" id="restoreBtn">Yükle</button>
+                    <input type="file" id="restoreFile" accept=".json,application/json" hidden>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Karakterleri yeniden oluştur</div><div class="d">Herkese yeni isim, yaş, şehir, meslek ve kişilik verilir (js/data/people-defs.js'teki tanımlar korunur). Sohbetler silinmez.</div></div>
+                    <button class="btn ghost small" id="reseedBtn">Yenile</button>
+                </div>
+                <div class="settings-row">
+                    <div><div class="t">Çıkış yap</div><div class="d">Giriş ekranına döner. Sohbetlerin bu cihazda kalır.</div></div>
+                    <button class="btn danger small" data-logout>Çıkış yap</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <nav class="bottom-nav">
+        <button class="nav-btn" data-view="home"><span class="nav-icon">🏠</span>Ana sayfa</button>
+        <button class="nav-btn" data-view="explore"><span class="nav-icon">🔎</span>Keşfet</button>
+        <button class="nav-btn" data-view="chats"><span class="nav-icon">💬<span class="nav-badge hidden" data-unread-count></span></span>Sohbetler</button>
+        <button class="nav-btn" data-view="matches"><span class="nav-icon">💞</span>Bağların</button>
+        <button class="nav-btn" data-view="activity"><span class="nav-icon">🔔<span class="nav-badge hidden" data-activity-count></span></span>Bildirimler</button>
+        <button class="nav-btn" data-view="profile"><span class="nav-icon">👤</span>Profil</button>
+    </nav>
+</div>
+
+<!-- Welcome, shown once right after sign-up -->
+<div class="welcome-overlay" id="welcomeOverlay">
+    <div class="welcome-collage" id="welcomeCollage"></div>
+    <div class="welcome-overlay-scrim"></div>
+    <div class="welcome-overlay-content">
+        <div class="welcome-heart">💙</div>
+        <div class="welcome-greeting" id="welcomeGreeting"></div>
+        <div class="welcome-tagline">Profilin hazır. Akışı gez, hikayeleri izle; insanlar seni zamanla fark edecek ve her yeni bağda haber vereceğim.</div>
+        <button class="btn block" id="welcomeGo">Keşfetmeye başla</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- One post, big: photo + caption + comments (comments go to her DMs) -->
+<div class="post-modal" id="postModal"></div>
+
+<!-- Story viewer (24h stories) -->
+<div class="story-viewer" id="storyViewer">
+    <div class="sv-card">
+        <div class="sv-bars" id="svBars"></div>
+        <div class="sv-head">
+            <img id="svAvatar" alt="">
+            <div><b id="svName"></b> <span id="svWhen"></span></div>
+            <button class="sv-close" id="svClose" title="Kapat (Esc)">✕</button>
+        </div>
+        <div class="sv-content" id="svContent"></div>
+        <div class="sv-tap left" id="svPrev"></div><div class="sv-tap right" id="svNext"></div>
+        <form class="sv-reply" id="svReply">
+            <input type="text" id="svInput" maxlength="500" placeholder="Yanıtla…" autocomplete="off">
+            <button type="button" class="sv-like" id="svLike" title="Beğen">♡</button>
+            <button type="submit" class="sv-send" title="Gönder">➤</button>
+        </form>
+    </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+    <img alt="">
+    <button class="lb-btn lb-close" data-lb="close" title="Kapat">✕</button>
+    <button class="lb-btn lb-prev" data-lb="prev" title="Önceki">‹</button>
+    <button class="lb-btn lb-next" data-lb="next" title="Sonraki">›</button>
+    <div class="lb-caption hidden"></div>
+    <div class="lb-count"></div>
+</div>
+
+<!-- Data: photo sets (tools/build-people.ps1), character defs and social lines (hand-editable) -->
+<script src="js/data/people.js"></script>
+<script src="js/data/people-defs.js"></script>
+<script src="js/data/social-tr.js"></script>
+<script src="js/data/themes.js"></script>
+<script src="js/data/effects.js"></script>
+<script src="js/data/emojis.js"></script>
+<script src="js/data/bot-rules.js"></script>
+<!-- The Amor engine (copied from the Amor app): moods, closeness, memory, pattern-based Turkish replies -->
+<script src="js/amor/store.js"></script>
+<script src="js/amor/data/pools.js"></script>
+<script src="js/amor/data/archetypes.js"></script>
+<script src="js/amor/data/intents.js"></script>
+<script src="js/amor/data/questions.js"></script>
+<script src="js/amor/data/memory-data.js"></script>
+<script src="js/amor/data/reflect.js"></script>
+<script src="js/amor/data/custom-dialog.js"></script>
+<script src="js/amor/schedule.js"></script>
+<script src="js/amor/mood.js"></script>
+<script src="js/amor/memory.js"></script>
+<script src="js/amor/interest.js"></script>
+<script src="js/amor/nlu.js"></script>
+<script src="js/amor/reflect.js"></script>
+<script src="js/amor/engine.js"></script>
+<script src="js/amor/kume.js"></script>
+<script src="js/amor/generator.js"></script>
+<script src="js/amor/bot.js"></script>
+<!-- The in-browser backend: the stand-in for the API (feed, stories, comments, DMs) -->
+<script src="js/local/util.js"></script>
+<script src="js/local/store.js"></script>
+<script src="js/local/characters.js"></script>
+<script src="js/local/openers.js"></script>
+<script src="js/local/reactions.js"></script>
+<script src="js/local/chatmedia.js"></script>
+<script src="js/local/stories.js"></script>
+<script src="js/local/crowd.js"></script>
+<script src="js/local/server.js"></script>
+
+<!-- The app, split by area (see each file's first line). Order matters: they share one global scope. -->
+<script src="js/core.js"></script>
+<script src="js/shell.js"></script>
+<script src="js/characters.js"></script>
+<script src="js/stories.js"></script>
+<script src="js/social.js"></script>
+<script src="js/lightbox.js"></script>
+<script src="js/profiles.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/language.js"></script>
+<script src="js/reply.js"></script>
+<script src="js/chattools.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/notify.js"></script>
+<script src="js/live.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/bonds.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/main.js"></script>
+<script src="js/pwa.js"></script>
+</body>
+</html>

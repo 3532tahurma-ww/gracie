@@ -1,0 +1,15 @@
+/*
+ * Gracie - karakterlerin tanımları
+ * --------------------------------
+ * Gracie Stüdyo → Kişiler ile düzenlenir (gracie-studyo.bat); elle de düzenlenebilir.
+ * Uygulama her açılışta bunları uygular. Anahtar = fotograflar\ altındaki klasörün kimliği (js/data/people.js).
+ * Boş bırakılan alanlar Amor havuzundan rastgele gelir.
+ *   name      : görünen ad
+ *   archetype : nese | soguk | utangac | flortoz | dramatik | olgun  (konuşma tarzı, Amor motoru)
+ *   job       : meslek (EXTRA_JOBS'ta ya da Amor havuzunda olmalı)
+ *   age, city : yaş, şehir (Amor havuzundaki şehirlerden)
+ *   bio       : profildeki kısa yazı
+ *   traits    : özellik etiketleri (bot kuralları bunlara bakar; js/data/traits.js)
+ *   about     : profilde "Hakkında" sekmesinde görünen uzun açıklama
+ * EXTRA_JOBS: Amor havuzunda olmayan meslekler. is = kendini tanıtırken ("{job_is}"), doing = ne yapıyorsun sorusuna.
+ */

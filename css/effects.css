@@ -1,0 +1,188 @@
+/* css/effects.css - Gracie's effects: Amor Stories bubble / emoji effects (on .msg), emoji bar, keyword sheet,
+   typing pen, mood rings, level-up card, first-move heart, blue hearts, story grow, parallax, "new" pill.
+   Everything here is off with html.no-fx (Settings → Visual effects) and with "reduce motion". */
+
+/* ---- ✨ Bubble effects (js/data/effects.js) ---- */
+.msg.fx-shake.play { animation: fxShake .6s; }
+.msg.fx-slam.play { animation: fxSlam .55s cubic-bezier(.2, 1.6, .4, 1); }
+.msg.fx-loud { font-size: 22px; font-weight: 800; letter-spacing: .3px; }
+.msg.fx-loud.play { animation: fxLoud .7s; }
+.msg.fx-gentle { font-size: 13px; font-style: italic; opacity: .78; }
+.msg.fx-gentle.play { animation: fxGentle 1.6s ease; }
+.msg.fx-glow { animation: fxGlow 1.8s ease-in-out infinite alternate; }
+.msg.fx-rainbow, #messages.themed-bubble .msg.fx-rainbow {
+    background: linear-gradient(90deg, #ff3d8b, #ffb72b, #34e3a8, #2f80ed, #a66bff, #ff3d8b) 0 0 / 300% 100%;
+    color: #fff; border-color: transparent; animation: fxRainbow 4s linear infinite;
+}
+.msg.fx-ink:not(.shown) { filter: blur(6px); cursor: pointer; user-select: none; }
+.msg.fx-ink:not(.shown)::after { content: '👆'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; filter: none; }
+.msg.fx-ink { transition: filter .5s; }
+@keyframes fxGentle { from { opacity: 0; transform: scale(.92); } to { opacity: .78; transform: none; } }
+@keyframes fxGlow { from { box-shadow: 0 0 4px rgba(255, 255, 255, .3); } to { box-shadow: 0 0 20px 5px rgba(0, 175, 240, .7); } }
+@keyframes fxLoud { 0% { transform: scale(.6); } 40% { transform: scale(1.25); } 70% { transform: scale(.95); } 100% { transform: scale(1); } }
+@keyframes fxRainbow { to { background-position: 300% 0; } }
+@keyframes fxShake { 0%, 100% { transform: translateX(0); } 15%, 45%, 75% { transform: translateX(-8px) rotate(-1deg); } 30%, 60%, 90% { transform: translateX(8px) rotate(1deg); } }
+@keyframes fxSlam { 0% { transform: scale(2.4); opacity: 0; } 60% { transform: scale(.9); opacity: 1; } 100% { transform: scale(1); } }
+
+/* ---- 😊 Emoji effects (js/data/emojis.js): 💧 wet, 🔥 burn, ❄️ frozen, ⚡ zap, ❤️ beat, 👻 ghost, ✨ sparkle, 🌊 wave ---- */
+.msg.efx { overflow: visible; }
+.msg.efx-wet::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(170deg, rgba(255,255,255,.38) 0%, rgba(255,255,255,0) 35%), linear-gradient(0deg, rgba(60,150,255,.32), rgba(60,150,255,.08)); }
+.msg.efx-wet::after { content: ''; position: absolute; left: 28%; bottom: -3px; width: 8px; height: 11px; pointer-events: none;
+    background: linear-gradient(180deg, #bfe3ff, #4aa3ff); border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; animation: efxDrip 2.2s ease-in infinite; }
+.msg.efx-wet { box-shadow: 0 0 0 1.5px rgba(140, 200, 255, .55); }
+.msg-wrap:nth-child(odd) .msg.efx-wet::after { left: 62%; animation-delay: .9s; }
+.msg.efx-wet.eplay { animation: efxSplash .6s ease-out; }
+.msg.efx-burn { animation: efxBurn 1.1s ease-in-out infinite alternate; }
+.msg.efx-burn::after { content: '🔥'; position: absolute; top: -14px; right: -6px; font-size: 18px; animation: efxFlame .5s ease-in-out infinite alternate; pointer-events: none; }
+.msg.efx-frozen { box-shadow: inset 0 0 0 2px rgba(210, 240, 255, .85), 0 0 14px rgba(150, 215, 255, .6); filter: saturate(.75) brightness(1.08); }
+.msg.efx-frozen::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(135deg, rgba(220,245,255,.45), rgba(170,220,255,.12) 50%, rgba(255,255,255,.3)); }
+.msg.efx-frozen::after { content: '❄️'; position: absolute; top: -12px; left: -8px; font-size: 16px; animation: efxSpin 6s linear infinite; pointer-events: none; }
+.msg.efx-frozen.eplay { animation: efxFreeze .7s ease-out; }
+.msg.efx-zap { animation: efxZap 3s steps(1) infinite; }
+.msg.efx-zap.eplay { animation: efxZapIn .45s steps(2) 2, efxZap 3s steps(1) .9s infinite; }
+.msg.efx-beat { animation: efxBeat 1.3s ease-in-out infinite; }
+.msg.efx-ghost { opacity: .55; animation: efxFloat 3s ease-in-out infinite; }
+.msg.efx-ghost.eplay { animation: efxGhostIn 1s ease-out, efxFloat 3s ease-in-out 1s infinite; }
+.msg.efx-sparkle::before, .msg.efx-sparkle::after { position: absolute; pointer-events: none; animation: efxTwinkle 1.6s ease-in-out infinite; }
+.msg.efx-sparkle::before { content: '✨'; top: -12px; right: -8px; font-size: 16px; }
+.msg.efx-sparkle::after { content: '✦'; bottom: -9px; left: -4px; font-size: 13px; color: #ffe58a; animation-delay: .8s; }
+.msg.efx-wave { animation: efxWave 2.4s ease-in-out infinite; transform-origin: center bottom; }
+/* the jewel-heart bubbles give the corner to an emoji effect */
+#messages.sbub-kalp .msg.efx::after { background: none; filter: none; }
+@keyframes efxBeat { 0%, 40%, 100% { transform: scale(1); } 15% { transform: scale(1.07); } 28% { transform: scale(1.03); } }
+@keyframes efxBurn { from { box-shadow: 0 0 6px 1px rgba(255, 122, 0, .55); } to { box-shadow: 0 0 18px 5px rgba(255, 61, 0, .75); } }
+@keyframes efxDrip { 0% { transform: translateY(-4px) scale(.2); opacity: 0; } 25% { transform: translateY(0) scale(1); opacity: 1; }
+    55% { transform: translateY(2px) scaleY(1.25); opacity: 1; } 100% { transform: translateY(30px) scaleY(1.1); opacity: 0; } }
+@keyframes efxFlame { from { transform: scale(.9) rotate(-6deg); } to { transform: scale(1.15) rotate(6deg); } }
+@keyframes efxFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes efxFreeze { 0% { filter: saturate(1) brightness(1.6) blur(1px); } 100% { filter: saturate(.75) brightness(1.08); } }
+@keyframes efxGhostIn { from { opacity: 0; filter: blur(4px); transform: translateY(10px); } to { opacity: .55; filter: none; transform: none; } }
+@keyframes efxSpin { to { transform: rotate(360deg); } }
+@keyframes efxSplash { 0% { transform: scale(.85); filter: blur(2px); } 60% { transform: scale(1.06); filter: none; } 100% { transform: none; } }
+@keyframes efxTwinkle { 0%, 100% { opacity: .2; transform: scale(.6) rotate(0); } 50% { opacity: 1; transform: scale(1.15) rotate(20deg); } }
+@keyframes efxWave { 0%, 100% { transform: skewX(0) rotate(0); } 25% { transform: skewX(-4deg) rotate(-1deg); } 75% { transform: skewX(4deg) rotate(1deg); } }
+@keyframes efxZap { 0%, 88%, 100% { box-shadow: none; } 90%, 94% { box-shadow: 0 0 0 2px #ffe14d, 0 0 16px #ffd000; } 92% { box-shadow: none; } }
+@keyframes efxZapIn { 0% { transform: translate(-3px, 1px); box-shadow: 0 0 0 2px #ffe14d, 0 0 20px #ffd000; } 50% { transform: translate(3px, -1px); } 100% { transform: none; } }
+
+/* ---- Composer: emoji shortcuts + ✨ next-message effect ---- */
+.emoji-bar { display: flex; gap: 2px; overflow-x: auto; padding: 6px 14px 0; scrollbar-width: none; flex-shrink: 0; }
+.emoji-bar::-webkit-scrollbar { display: none; }
+.emoji-bar button { border: 0; background: none; font-size: 21px; width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; position: relative; transition: transform .12s, background .15s; }
+.emoji-bar button:hover { background: var(--accent-pale); transform: scale(1.15); }
+.emoji-bar button.has-fx::after { content: ''; position: absolute; right: 5px; bottom: 5px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.emoji-bar .eb-edit { font-size: 14px; color: var(--ink-soft); }
+.fx-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: var(--accent-pale); font-size: 17px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.fx-btn.armed { background: var(--accent); border-color: var(--accent); animation: fxArmed 1.4s ease-in-out infinite; }
+@keyframes fxArmed { 50% { box-shadow: 0 0 0 5px var(--accent-pale-2); } }
+@media (max-width: 600px) { .chat-input-row { gap: 6px; padding: 10px 10px; } .fx-btn, .side-btn { width: 34px; height: 34px; } }
+
+/* effect / emoji / keyword sheets */
+.fx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.fx-grid button { border: 2px solid var(--line); background: var(--accent-pale); color: var(--ink); border-radius: 14px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; }
+.fx-grid button span { font-size: 22px; }
+.fx-grid button.on { border-color: var(--accent); background: var(--accent-pale-2); }
+.kw-form { display: flex; gap: 8px; margin-top: 4px; }
+.kw-form input { flex: 1; }
+.kw-row { display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--line); }
+.kw-row .info { flex: 1; min-width: 0; }
+.kw-row .info b { font-size: 14px; }
+.kw-row .info small { display: block; color: var(--ink-soft); font-size: 12px; }
+.kw-row .kw-fx { border: 1px solid var(--line); background: var(--accent-pale); border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.kw-row .kw-fx.on { border-color: var(--accent); background: var(--accent-pale-2); }
+.kw-row .kw-del { border: 0; background: none; color: var(--ink-soft); font-size: 15px; width: 30px; height: 30px; border-radius: 50%; }
+.kw-scope { display: flex; gap: 6px; margin: 8px 0 2px; }
+.kw-scope button { border: 1px solid var(--line); background: var(--white); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
+.kw-scope button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.em-row { display: flex; align-items: center; gap: 10px; padding: 6px 2px; border-bottom: 1px solid var(--line); }
+.em-row .e { font-size: 24px; width: 34px; text-align: center; }
+.em-row select { flex: 1; width: auto; }
+.msg-sheet-rx { display: flex; justify-content: space-around; margin: 4px 0 10px; }
+.msg-sheet-rx button { font-size: 26px; border: 0; background: var(--accent-pale); width: 46px; height: 46px; border-radius: 50%; }
+.msg-sheet-rx button.on { background: var(--accent-pale-2); box-shadow: inset 0 0 0 2px var(--accent); }
+
+/* ---- Typing: a little pen ---- */
+.chat-status .pen { display: inline-block; animation: penWrite .5s ease-in-out infinite alternate; transform-origin: bottom left; }
+@keyframes penWrite { from { transform: rotate(-12deg) translateX(-1px); } to { transform: rotate(10deg) translateX(2px); } }
+
+/* ---- Mood ring around her avatar (Amor mood labels) ---- */
+.avatar[class*="mood-"] img, .avatar-frame-wrap[class*="mood-"] .avatar-frame { box-shadow: 0 0 0 2px var(--white), 0 0 0 4px var(--mood, transparent); transition: box-shadow .6s; }
+.avatar-frame-wrap[class*="mood-"]:not(.has-story) .avatar-frame { box-shadow: 0 0 0 4px var(--white), 0 0 0 8px var(--mood, transparent); }
+.avatar.has-story[class*="mood-"] img { box-shadow: none; }
+.mood-excited { --mood: #ff9f1c; } .mood-content { --mood: #2fc58e; } .mood-neutral { --mood: #b9c6d0; }
+.mood-irritated { --mood: #ff4d4f; } .mood-sad { --mood: #5b8def; } .mood-tired { --mood: #a59ccc; } .mood-drained { --mood: #c49a78; }
+.mood-tired img, .mood-drained img { filter: saturate(.75); }
+.mood-chip { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ---- Level up card ---- */
+.lv-card { position: fixed; inset: 0; z-index: 2560; display: flex; align-items: center; justify-content: center; background: rgba(0, 20, 40, .35); animation: lvFade .3s ease; }
+.lv-card .box { background: var(--white); color: var(--ink); border-radius: 26px; padding: 26px 30px 22px; text-align: center; width: min(320px, 88vw);
+    box-shadow: 0 24px 60px rgba(0, 130, 190, .35); animation: lvPop .55s cubic-bezier(.2, 1.5, .4, 1); position: relative; overflow: hidden; }
+.lv-card .box::before { content: ''; position: absolute; inset: -40% -40% auto; height: 160px; background: radial-gradient(circle, var(--accent-pale-2), transparent 70%); }
+.lv-card img { width: 78px; height: 78px; border-radius: 50%; object-fit: cover; position: relative; box-shadow: 0 0 0 4px var(--white), 0 0 0 7px var(--accent); animation: lvGlow 1.6s ease-in-out infinite; }
+.lv-card .k { position: relative; margin-top: 12px; font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--ink-soft); }
+.lv-card .n { position: relative; font-family: 'Sora', sans-serif; font-size: 24px; font-weight: 700; color: var(--accent-deep); margin: 2px 0 6px; }
+.lv-card .t { position: relative; font-size: 13.5px; color: var(--ink-soft); }
+.lv-card .hearts { position: relative; margin-top: 12px; font-size: 18px; letter-spacing: 3px; }
+.lv-card .hearts span { opacity: .25; } .lv-card .hearts span.on { opacity: 1; }
+.lv-card .hearts span.new { animation: lvHeart .8s .35s both cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes lvFade { from { opacity: 0; } }
+@keyframes lvPop { from { transform: scale(.6) translateY(30px); opacity: 0; } }
+@keyframes lvGlow { 50% { box-shadow: 0 0 0 4px var(--white), 0 0 0 7px var(--accent), 0 0 26px 8px rgba(0, 175, 240, .45); } }
+@keyframes lvHeart { from { transform: scale(0); opacity: 0; } }
+
+/* ---- First move: a heart-shaped notification ---- */
+.first-move { position: fixed; z-index: 2560; left: 50%; top: 18px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; cursor: pointer;
+    background: var(--white); color: var(--ink); border-radius: 999px; padding: 8px 18px 8px 8px; box-shadow: 0 16px 40px rgba(0, 130, 190, .3);
+    animation: fmIn .7s cubic-bezier(.2, 1.4, .4, 1) both; max-width: 92vw; }
+.first-move.out { animation: fmOut .35s ease forwards; }
+.first-move .heart { width: 64px; height: 58px; flex-shrink: 0; position: relative; animation: heartbeat 1.4s ease-in-out .7s infinite; }
+.first-move .heart svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.first-move .heart img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; clip-path: url(#gracieHeartClip); }
+.first-move b { display: block; font-size: 14.5px; }
+.first-move small { display: block; color: var(--ink-soft); font-size: 12.5px; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@keyframes fmIn { from { transform: translateX(-50%) translateY(-120px) scale(.4) rotate(-12deg); opacity: 0; } }
+@keyframes fmOut { to { transform: translateX(-50%) translateY(-120px) scale(.6); opacity: 0; } }
+
+/* ---- 💙 rising blue hearts ---- */
+.blue-hearts { position: fixed; inset: 0; pointer-events: none; z-index: 9990; overflow: hidden; }
+.blue-hearts img { position: absolute; bottom: -60px; width: 34px; animation: blueRise linear forwards; filter: drop-shadow(0 4px 10px rgba(0, 140, 210, .35)); }
+@keyframes blueRise {
+    0% { transform: translate(0, 0) scale(.6) rotate(0); opacity: 0; }
+    10% { opacity: 1; }
+    50% { transform: translate(var(--sway, 20px), -55vh) scale(1) rotate(8deg); }
+    100% { transform: translate(calc(var(--sway, 20px) * -1), -110vh) scale(1.1) rotate(-8deg); opacity: 0; }
+}
+
+/* ---- Stories: grow from the avatar, shrink back ---- */
+.story-viewer.grow .sv-card { animation: svGrow .38s cubic-bezier(.2, .9, .25, 1); }
+.story-viewer.shrink .sv-card { animation: svShrink .26s ease-in forwards; }
+.story-viewer.shrink { opacity: 0; transition: opacity .26s; }
+@keyframes svGrow { from { transform: scale(.08); border-radius: 50%; opacity: .2; } }
+@keyframes svShrink { to { transform: scale(.08); border-radius: 50%; opacity: 0; } }
+
+/* ---- Feed: shimmer while a photo loads, parallax ---- */
+.lq { position: relative; overflow: hidden; }
+.lq:has(> img:not(.loaded))::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%) 0 0 / 300% 100%; animation: lqShimmer 1.3s linear infinite; }
+@keyframes lqShimmer { from { background-position: 150% 0; } to { background-position: -150% 0; } }
+.fp-photo > img.loaded { will-change: transform; }
+
+/* "Yeni hikayeler ↑" */
+.new-pill { position: sticky; top: 10px; z-index: 6; margin: 0 auto -38px; width: max-content; display: flex; align-items: center; gap: 6px;
+    background: var(--accent); color: #fff; border: 0; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: 13px;
+    box-shadow: 0 8px 22px rgba(0, 140, 210, .35); animation: pillIn .45s cubic-bezier(.2, 1.5, .4, 1); }
+.new-pill img { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; margin-left: -8px; object-fit: cover; }
+.new-pill img:first-child { margin-left: 0; }
+@keyframes pillIn { from { transform: translateY(-30px); opacity: 0; } }
+.home-stories.flash { animation: stripFlash .9s ease; }
+@keyframes stripFlash { 30% { background: var(--accent-pale-2); border-radius: 16px; } }
+
+/* ---- Off switch ---- */
+html.no-fx .msg[class*="fx-"], html.no-fx .msg.efx, html.no-fx .msg.efx::before, html.no-fx .msg.efx::after,
+html.no-fx .chat-status .pen, html.no-fx .first-move .heart, html.no-fx .lv-card img, html.no-fx .lq::after { animation: none !important; }
+html.no-fx .blue-hearts { display: none; }
+@media (prefers-reduced-motion: reduce) {
+    .msg[class*="fx-"], .msg.efx, .msg.efx::before, .msg.efx::after, .chat-status .pen, .first-move .heart, .lv-card img { animation: none !important; }
+    .blue-hearts { display: none; }
+}
