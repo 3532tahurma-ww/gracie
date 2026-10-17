@@ -7,7 +7,7 @@
  * so phones drop the old files.
  */
 const VERSION = "gracie-v8";
-const IMG_CACHE = "gracie-img-5";  // bump after rebuilding people/ (same file names, new photos)
+const IMG_CACHE = "gracie-img-7";  // bump after rebuilding people/ (same file names, new photos)
 const CORE = [
     "./", "./index.html", "./manifest.json", "./icon.png", "./avatar.js", "./css/app.css", "./css/pages.css", "./css/gracie.css", "./css/effects.css",
     "./js/data/people.js", "./js/data/people-defs.js", "./js/data/social-tr.js", "./js/data/themes.js", "./js/data/effects.js", "./js/data/emojis.js", "./js/data/bot-rules.js",
